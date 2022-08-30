@@ -1,0 +1,12 @@
+Metadata-Version: 2.1
+Name: laszip
+Version: 0.1.0
+Summary: Bindings for LASzip made with pybind11
+Home-page: UNKNOWN
+Author: Thomas Montaigu
+Author-email: thomas.montaigu@laposte.net
+License: UNKNOWN
+Platform: UNKNOWN
+
+UNKNOWN
+
