@@ -1,30 +1,37 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
+from fastapi.responses import FileResponse
 import geojson
-import laspy
 import subprocess as sp
 import json
 import os
 from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
 import pyproj
+import os
+import zipfile
+import io
+
 
 app = FastAPI()
 
 # poligino de datos de muestra extraidos del portal de descargas CNIG WSG84,
 # almacenado temporalmente en storage/
-DATA_POLYGON = [[-3.723834 , 40.436867],
-                [-3.723805 , 40.405078],
-                [-3.670911, 40.404709],
-                [-3.672853, 40.436128]]
+DATA_POLYGON = [
+                    [-3.723834 , 40.436867],
+                    [-3.723805 , 40.405078],
+                    [-3.670911, 40.404709],
+                    [-3.672853, 40.436128],
+                    [-3.723834 , 40.436867]
+                ]
+DIRECTORY = 'storage/'
 @app.get('/')
 def read_root():
     
     return {"Hello": "World"}
 
-@app.post('/geojson')
+@app.get('/geojson')
 async def read_geojson(request: Request):
-    directory = 'storage'
-    target = 'storage/PNOA_2010_Lote7_CYL-MAD_438-4474_ORT-CLA-COL.laz'
+    
     body = await request.body()
     gj = geojson.loads(body)
     result = {}
@@ -82,5 +89,37 @@ async def read_geojson(request: Request):
     else:
         return {"status": "error, bad geojson file"}
   
+@app.get("/files")
+async def file_response(request: Request):
+    body = await request.body()
+    data = json.loads(body)['data']
+    url_list = list(data)
+    return zipfiles(url_list)
+    #return FileResponse()
 
+
+def zipfiles(filenames):
+    zip_filename = "archive.zip"
+
+
+    s = io.BytesIO()
+    zf = zipfile.ZipFile(s, "w")
+
+    for fpath in filenames:
+        # Calculate path for file in zip
+        fpath =  DIRECTORY+fpath
+        fdir, fname = os.path.split(fpath)
+
+        # Add file, at correct path 
+        zf.write(fpath, fname)
+
+    # Must close zip for all contents to be written
+    zf.close()
+
+    # Grab ZIP file from in-memory, make response with correct MIME-type
+    resp = Response(s.getvalue(), media_type="application/x-zip-compressed", headers={
+        'Content-Disposition': f'attachment;filename={zip_filename}'
+    })
+
+    return resp
 
