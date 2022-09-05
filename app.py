@@ -38,12 +38,12 @@ async def read_geojson(request: Request):
     inside = []
     if gj.is_valid:
         for features in gj['features']:
-            for filename in os.scandir(directory):
+            for filename in os.scandir(DIRECTORY):
                 if filename.is_file():
                     #se utiliza pdal para extraer metadata de los archivos laz
                     metadata = sp.run(['pdal', 'info','--metadata', filename], stderr=sp.PIPE, stdout=sp.PIPE)
                     metadata = metadata.stdout.decode()
-
+                    
                     metadata = str(metadata).replace("'", '"')
                     metadata = json.loads(metadata)
 
@@ -62,7 +62,7 @@ async def read_geojson(request: Request):
                     p3 = Point(minx, miny)
                     p4 = Point(minx, maxy)
                     
-                    #se genera el poligno entrante en la request
+                    #se genera el poligono entrante en la request
                     polygon = Polygon(features['geometry']['coordinates'][0])
 
                     #se transforma el poligono de los archivos laz de ETRS89 / UTM zone 30N  a WSG84
@@ -74,17 +74,10 @@ async def read_geojson(request: Request):
                         point = Point(point.y, point.x)
                         
                         if polygon.contains(point):
-                            print('point is inside polygon')
-                            print(point)
                            
-                            print('----------------------')
                             inside.append(filename.name)
                             break
-                        else:
-                            print('point is outside polygon')
-                            print(point)
-                            print('----------------------')
-            
+                       
         return {"status": "ok", "inside": inside}
     else:
         return {"status": "error, bad geojson file"}
