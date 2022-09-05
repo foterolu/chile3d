@@ -1,9 +1,9 @@
 # Instalacion 
 recomiendo crear y activar sus propios env con: 
-    - python venv /env
+- python venv /env
 
 lo activan en windows con:
-    - ./env/Scripts/activate
+- ./env/Scripts/activate
 en linux:
     - source env/bin/activate
 
