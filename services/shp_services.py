@@ -15,7 +15,7 @@ class ShapefileServices:
                
                 data = fiona.open(folder.path + "/" + filename)
                 bbox, crs = data.bounds, data.crs
-                
+               
                 espg = crs["init"].split(":")[1]
                 minx = bbox[0]
                 miny = bbox[1]
@@ -29,19 +29,15 @@ class ShapefileServices:
                 p4 = Point(minx, maxy)
 
                 polygon = Polygon(features['geometry']['coordinates'][0])
-                print(polygon)
-
                 crs_transform = pyproj.Transformer.from_crs( "EPSG:" + espg,"EPSG:4326")
-
                 for point in [p1, p2, p3, p4]:
+                    
                     point = Point(crs_transform.transform(point.x, point.y))
+                    print(point, folder.path)
                     if polygon.contains(point):
                         print("inside")
                         inside.append(folder.path + "/")
                         break
-                
-                
-        
         return inside
     def check_shp_files(self,folder):
         files = os.listdir(folder)

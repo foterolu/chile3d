@@ -1,5 +1,3 @@
-
-
 import geojson
 import subprocess as sp
 import json
@@ -36,11 +34,11 @@ app.add_middleware(
 # poligino de datos de muestra extraidos del portal de descargas CNIG WSG84,
 # almacenado temporalmente en storage/
 DATA_POLYGON = [
-                    [-3.723834 , 40.436867],
-                    [-3.723805 , 40.405078],
-                    [-3.670911, 40.404709],
-                    [-3.672853, 40.436128],
-                    [-3.723834 , 40.436867]
+                        [-3.723834 , 40.436867],
+                        [-3.723805 , 40.405078],
+                        [-3.670911, 40.404709],
+                        [-3.672853, 40.436128],
+                        [-3.723834 , 40.436867]
                 ]
 DIRECTORY = 'storage/'
 @app.get('/')
@@ -70,7 +68,6 @@ async def read_geojson(request: Request):
                     for folder in os.scandir(dir.path):
                         if folder.is_dir():
                             inside = ShapefileServices().get_inside_list(folder,features,inside)
-
                 if dir.is_dir():
                     for filename in os.scandir(dir.path):
                         if filename.is_file():
@@ -83,7 +80,7 @@ async def read_geojson(request: Request):
                                 maxy = data.bounds.top
                                 minx = data.bounds.left
                                 miny = data.bounds.bottom
-                                print(f'data crs {data.crs}  data bounds: {data.bounds}')
+                            
                                 p1 = Point(maxx, maxy)
                                 p2 = Point(maxx, miny)
                                 p3 = Point(minx, miny)
@@ -135,25 +132,20 @@ def zipfiles(filenames):
     for fpath in filenames:
         # Calculate path for file in zip
         fdir, fname = os.path.split(fpath)
-        print(fname)
         if fname != '':
         # Add file, at correct path 
             zf.write(fpath, fname)
         else:
             for dirname, subdirs, files in os.walk(fpath):
-                print(dirname)
                 for filename in files:
                     
                     # Add file, at correct path
                     zf.write(os.path.join(dirname, filename))
-
     # Must close zip for all contents to be written
     zf.close()
-
     # Grab ZIP file from in-memory, make response with correct MIME-type
     resp = Response(s.getvalue(), media_type="application/x-zip-compressed", headers={
         'Content-Disposition': f'attachment;filename={zip_filename}'
     })
-
     return resp
 
