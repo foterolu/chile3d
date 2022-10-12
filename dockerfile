@@ -1,7 +1,7 @@
 FROM ubuntu:latest
-WORKDIR /app
+WORKDIR /
 
-COPY . /app 
+COPY . / 
 
 
 RUN apt-get update && \
