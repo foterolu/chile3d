@@ -5,7 +5,7 @@ COPY . /
 
 
 RUN apt-get update && \
-    apt-get install -y software-properties-common && \
+    apt-get install -y software-properties-common vim && \
     rm -rf /var/lib/apt/lists/*
 
 
@@ -27,6 +27,3 @@ COPY requirements.txt /tmp/requirements.txt
 RUN pip install -r /tmp/requirements.txt
 
 CMD ["uvicorn","app:app", "--host", "0.0.0.0" , "--reload"]
-
-
-
