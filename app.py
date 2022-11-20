@@ -192,7 +192,8 @@ def resample_raster(raster, scale=2):
             del data
 
         with memfile.open() as dataset: 
-            yield dataset 
+            yield dataset
+
 
 def resample_file(filename, scale=2):
     print(f'Processing {filename}')
