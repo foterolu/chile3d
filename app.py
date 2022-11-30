@@ -14,6 +14,7 @@ from shapely.geometry.polygon import Polygon
 from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image
 from PIL.TiffTags import TAGS
+from pymongo import MongoClient
 
 from rasterio.enums import Resampling
 from rasterio import Affine, MemoryFile
@@ -21,6 +22,8 @@ from rasterio.warp import reproject, Resampling
 from contextlib import contextmanager
 from services.laz_services import LazServices
 from services.shp_services import ShapefileServices
+from services.tif_services import TifServices
+from routes.archivos import archivos_ruta
 
 from osgeo import gdal,osr
 
@@ -45,72 +48,15 @@ DATA_POLYGON = [
                         [-3.723834 , 40.436867]
                 ]
 DIRECTORY = 'storage/'
-@app.get('/')
-def read_root():
-   
-    return {"Hello": "World"}
 
-@app.get('/servicios')
-async def servicios(request: Request):
-    client_host = await request.client.host
-    print(client_host)
-    return {"servicios": "disponibles"}
+app.include_router(archivos_ruta,tags=["archivo"])
 
 
-@app.post('/geojson')
-async def read_geojson(request: Request):
-    body = await request.body()
-    gj = geojson.loads(body)
-    result = {}
-    inside = []
-    if gj.is_valid:
-        for features in gj['features']:
-            flag = 0
-            for dir in os.scandir(DIRECTORY):
-                #shapefile son varios archvios contenidos en una misma carpeta
-                if dir.name == "shapefiles":
-                    for folder in os.scandir(dir.path):
-                        if folder.is_dir():
-                            inside = ShapefileServices().get_inside_list(folder,features,inside)
-                if dir.is_dir():
-                    for filename in os.scandir(dir.path):
-                        if filename.is_file():
-                            extension =  filename.name.split('.')[-1]
-                            #GeoTiff
-                            if extension == "tif":
-                                data = rasterio.open(filename.path)
-                                z = data.read()[0]
-                                maxx = data.bounds.right
-                                maxy = data.bounds.top
-                                minx = data.bounds.left
-                                miny = data.bounds.bottom
-                            
-                                p1 = Point(maxx, maxy)
-                                p2 = Point(maxx, miny)
-                                p3 = Point(minx, miny)
-                                p4 = Point(minx, maxy)
-                                crs_transform = pyproj.Transformer.from_crs(data.crs,"EPSG:4326")
-                                polygon = Polygon(features['geometry']['coordinates'][0])
-
-                                for point in [p1,p2,p3,p4]:
-                                    point = Point(crs_transform.transform(point.x,point.y))
-                                    point = Point(point.y,point.x)
-                                    if polygon.contains(point):
-                                        inside.append(filename.path)
-                                        break
-
-                            elif extension == "laz":
-                                #se utiliza pdal para extraer metadata de los archivos laz
-                                #se extrae la proyección de los archivos laz, que es un WKT de la OGC
-                                inside = LazServices().get_inside_list(filename,features,inside)
-                       
-        return {"status": "ok", "inside": inside}
-    else:
-        return {"status": "error, bad geojson file"}
+    
 
 
   
-@app.post("/files")
+@app.post("/archivos/descargar")
 async def file_response(request: Request):
     body = await request.body()
 
@@ -128,7 +74,7 @@ async def file_response(request: Request):
 
 def zipfiles(filenames):
     zip_filename = "archive.zip"
-    print(filenames)
+  
 
     s = io.BytesIO()
     zf = zipfile.ZipFile(s, "w")
@@ -136,11 +82,13 @@ def zipfiles(filenames):
     for fpath in filenames:
         # Calculate path for file in zip
         fdir, fname = os.path.split(fpath)
+        print(fdir)
         if fname != '':
         # Add file, at correct path 
             zf.write(fpath, fname)
         else:
             for dirname, subdirs, files in os.walk(fpath):
+                print(subdirs)
                 for filename in files:
                     
                     # Add file, at correct path
@@ -153,7 +101,10 @@ def zipfiles(filenames):
     })
     return resp
 
-  
+
+
+
+
 @app.post("/process")
 async def file_process(request: Request):
     body = await request.body()

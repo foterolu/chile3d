@@ -5,39 +5,66 @@ import fiona
 import pyproj
 from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
-
+from pymongo import MongoClient
+from schemas.schemas import Archivo
+from datetime import datetime
 MUST_IN_EXTENSIONS = ['.shp' , '.shx', '.dbf']
 
 class ShapefileServices:
     def get_inside_list(self, folder,features,inside):
+        conn = MongoClient('localhost', 27017)["chile3d"]
+       
         for filename in os.listdir(folder):
+            admin_id = 1
+            nombre = filename
+            descripcion = "descripcion"
+            extension =  "shp"
+            espg_code = ""
+            fecha_creacion = datetime.utcnow()
+            fecha_modificacion = datetime.utcnow()
+            minx = 0
+            miny = 0
+            maxx = 0
+            maxy = 0
+            url = "url"
+            keyword = "keyword"
+            topic_category = "topic_category"
+            institucion = "institucion"
+            cantidad_descargas = 0
             if filename.endswith('.shp'):
-               
                 data = fiona.open(folder.path + "/" + filename)
                 bbox, crs = data.bounds, data.crs
-               
-                espg = crs["init"].split(":")[1]
+                espg_code = crs["init"].split(":")[1]
+                
                 minx = bbox[0]
                 miny = bbox[1]
                 maxx = bbox[2]
                 maxy = bbox[3]
+                
+                if conn["archivos"].find_one({"url":folder.path}) == None:
+                    data = {
+                    "admin_id": admin_id,
+                    "nombre": nombre,
+                    "descripcion": descripcion,
+                    "extension": extension,
+                    "espg": espg_code,
+                    "fecha_creacion": fecha_creacion,
+                    "fecha_modificacion": fecha_modificacion,
+                    "minx": minx,
+                    "miny": miny,
+                    "maxx": maxx,
+                    "maxy": maxy,
+                    "url": folder.path,
+                    "keyword": keyword,
+                    "topic_category": topic_category,
+                    "institucion": institucion,
+                    "cantidad_descargas": cantidad_descargas
 
+                }
+                    insert_archivo = Archivo(**data)
+                    conn["archivos"].insert_one(insert_archivo.dict())
 
-                p1 = Point(maxx, maxy)
-                p2 = Point(maxx, miny)
-                p3 = Point(minx, miny)
-                p4 = Point(minx, maxy)
-
-                polygon = Polygon(features['geometry']['coordinates'][0])
-                crs_transform = pyproj.Transformer.from_crs( "EPSG:" + espg,"EPSG:4326")
-                for point in [p1, p2, p3, p4]:
-                    
-                    point = Point(crs_transform.transform(point.x, point.y))
-                    print(point, folder.path)
-                    if polygon.contains(point):
-                        print("inside")
-                        inside.append(folder.path + "/")
-                        break
+            
         return inside
     def check_shp_files(self,folder):
         files = os.listdir(folder)
