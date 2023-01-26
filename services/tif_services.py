@@ -26,12 +26,13 @@ from schemas.schemas import Archivo
 from datetime import datetime
 
 from osgeo import gdal,osr
+from globals import *
 
 
 
 class TifServices:
     def get_inside_list(self, filename,features, inside):
-        conn = MongoClient('localhost', 27017)["chile3d"]
+        conn = MongoClient(MONGO_STRING)["chile3d"]
         admin_id = 1
         nombre = filename.name
         descripcion = "descripcion"
@@ -56,6 +57,16 @@ class TifServices:
         minx = archivo.bounds.left
         miny = archivo.bounds.bottom
         espg_code = str(archivo.crs).split(":")[1]
+
+        p1 = Point(maxx, maxy)
+        p2 = Point(minx, miny)
+        crs_transform = pyproj.Transformer.from_crs(espg_code,"EPSG:4326",always_xy=True)
+        p1 = crs_transform.transform(p1.x, p1.y)
+        p2 = crs_transform.transform(p2.x, p2.y)
+        maxx = p1[0]
+        maxy = p1[1]
+        minx = p2[0]
+        miny = p2[1]
         if conn["archivos"].find_one({"url":filename.path}) == None:
             data = {
                 "admin_id": admin_id,
@@ -74,24 +85,12 @@ class TifServices:
                 "topic_category": topic_category,
                 "institucion": institucion,
                 "cantidad_descargas": cantidad_descargas
-
             }
             insert_archivo = Archivo(**data)
             conn["archivos"].insert_one(insert_archivo.dict())
-        
-        """
-        p1 = Point(maxx, maxy)
-        p2 = Point(maxx, miny)
-        p3 = Point(minx, miny)
-        p4 = Point(minx, maxy)
-        crs_transform = pyproj.Transformer.from_crs(archivo.crs,"EPSG:4326",always_xy=True)
-        polygon = Polygon(features['geometry']['coordinates'][0])
-
-        for point in [p1,p2,p3,p4]:
-            point = Point(crs_transform.transform(point.x,point.y))
+        else:
+            raise Exception("El archivo ya existe en la base de datos")
+    
             
-            if polygon.contains(point):
-                inside.append(filename.path)
-                break
-        """
+       
        

@@ -8,11 +8,12 @@ from shapely.geometry.polygon import Polygon
 from pymongo import MongoClient
 from schemas.schemas import Archivo
 from datetime import datetime
+from globals import *
 MUST_IN_EXTENSIONS = ['.shp' , '.shx', '.dbf']
 
 class ShapefileServices:
     def get_inside_list(self, folder,features,inside):
-        conn = MongoClient('localhost', 27017)["chile3d"]
+        conn = MongoClient(MONGO_STRING)["chile3d"]
        
         for filename in os.listdir(folder):
             admin_id = 1
@@ -40,6 +41,15 @@ class ShapefileServices:
                 miny = bbox[1]
                 maxx = bbox[2]
                 maxy = bbox[3]
+                p1 = Point(maxx, maxy)
+                p2 = Point(minx, miny)
+                crs_transform = pyproj.Transformer.from_crs(espg_code,"EPSG:4326",always_xy=True)
+                p1 = crs_transform.transform(p1.x, p1.y)
+                p2 = crs_transform.transform(p2.x, p2.y)
+                maxx = p1[0]
+                maxy = p1[1]
+                minx = p2[0]
+                miny = p2[1]
                 
                 if conn["archivos"].find_one({"url":folder.path}) == None:
                     data = {

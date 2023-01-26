@@ -24,6 +24,9 @@ from services.laz_services import LazServices
 from services.shp_services import ShapefileServices
 from services.tif_services import TifServices
 from routes.archivos import archivos_ruta
+from routes.institucion import institucion_ruta
+from routes.admin import admin_ruta
+from routes.login import login_ruta
 
 from osgeo import gdal,osr
 
@@ -48,11 +51,14 @@ DATA_POLYGON = [
                         [-3.723834 , 40.436867]
                 ]
 DIRECTORY = 'storage/'
-
+app.include_router(institucion_ruta,tags=["institucion"])
 app.include_router(archivos_ruta,tags=["archivo"])
+app.include_router(admin_ruta,tags=["admin"])
+app.include_router(login_ruta,tags=["login"])
 
 
-    
+
+
 
 
   
