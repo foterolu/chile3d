@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from jose import JWTError, jwt
 from globals import *
 from routes.login import read_users_me
-import bcrypt
+
 
 
 

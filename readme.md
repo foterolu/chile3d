@@ -5,7 +5,7 @@ operativo Ubuntu, para aquellos que requiera correr la API en otro sistema recom
 
 `sudo docker build -t chile-3d . && sudo docker run --network=host -p 8000:8000/tcp -it chile-3d `
 
-En caso contrario, es necesario:
+En caso contrario, para python es necesario:
 
     apt-get install -y \
     python3 \
@@ -14,4 +14,6 @@ En caso contrario, es necesario:
     libgdal-dev \
     python3-gdal
 
-y luego las librerias del requirements.txt
+y luego las librerias del requirements.txt.
+
+En el caso de la DB es necesario mongodb.
