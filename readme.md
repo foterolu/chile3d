@@ -3,7 +3,7 @@
 Para el correcto funcionamiento de la libreria pdal (lectura de archivos las/laz) es necesario el sistema
 operativo Ubuntu, para aquellos que requiera correr la API en otro sistema recomiendo utilizar docker
 
-`sudo docker build -t chile-3d . && sudo docker run --network=host -p 8000:8000/tcp -it chile-3d `
+`sudo docker build -t chile-3d . && sudo docker run -p 8000:8000/tcp -it chile-3d `
 
 En caso contrario, para python es necesario:
 
