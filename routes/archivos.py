@@ -86,7 +86,7 @@ def indexar(filename):
     os.remove(filename.path)
     return {"status": "ok"}
 
-@archivos_ruta.get("/archivos/buscar/poligono",status_code=200,response_model=List[Archivo])
+@archivos_ruta.post("/archivos/buscar/poligono",status_code=200,response_model=List[Archivo])
 async def buscar_archivos(request: geojson_pydantic.FeatureCollection[geojson_pydantic.Polygon,Dict]):
     conn = MongoClient(MONGO_STRING)["chile3d"]
     #IMPORTANT: agregar query within
