@@ -83,7 +83,7 @@ def indexar(filename):
         #se utiliza pdal para extraer metadata de los archivos laz
         #se extrae la proyección de los archivos laz, que es un WKT de OGC
         LazServices().get_inside_list(filename,[],inside)
-    os.remove(filename.path)
+    
     return {"status": "ok"}
 
 @archivos_ruta.post("/archivos/buscar/poligono",status_code=200,response_model=List[Archivo])
