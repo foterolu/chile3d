@@ -60,7 +60,7 @@ class TifServices:
 
         p1 = Point(maxx, maxy)
         p2 = Point(minx, miny)
-        crs_transform = pyproj.Transformer.from_crs(espg_code,"EPSG:4326",always_xy=True)
+        crs_transform = pyproj.Transformer.from_crs(archivo.crs,"EPSG:4326",always_xy=True)
         p1 = crs_transform.transform(p1.x, p1.y)
         p2 = crs_transform.transform(p2.x, p2.y)
         maxx = p1[0]
