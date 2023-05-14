@@ -31,9 +31,10 @@ from globals import *
 
 
 class TifServices:
-    def get_inside_list(self, filename,features, inside):
+    def get_inside_list(self, filename,features, inside, admin_insitucion):
+   
         conn = MongoClient(MONGO_STRING)["chile3d"]
-        admin_id = 1
+    
         nombre = filename.name
         descripcion = "descripcion"
         extension =  "tif"
@@ -51,29 +52,30 @@ class TifServices:
         cantidad_descargas = 0
 
         archivo = rasterio.open(filename.path)
+       
         z = archivo.read()[0]
         maxx = archivo.bounds.right
         maxy = archivo.bounds.top
         minx = archivo.bounds.left
         miny = archivo.bounds.bottom
-        espg_code = str(archivo.crs).split(":")[1]
-
         p1 = Point(maxx, maxy)
         p2 = Point(minx, miny)
-        crs_transform = pyproj.Transformer.from_crs(archivo.crs,"EPSG:4326",always_xy=True)
+        crs = pyproj.CRS(archivo.crs)
+        crs_transform = pyproj.Transformer.from_crs(crs,"EPSG:4326",always_xy=True)
         p1 = crs_transform.transform(p1.x, p1.y)
         p2 = crs_transform.transform(p2.x, p2.y)
         maxx = p1[0]
         maxy = p1[1]
         minx = p2[0]
         miny = p2[1]
+        print(conn["archivos"].find_one({"url":filename.path}) )
         if conn["archivos"].find_one({"url":filename.path}) == None:
             data = {
-                "admin_id": admin_id,
+                "admin": admin_insitucion.dict(),
                 "nombre": nombre,
                 "descripcion": descripcion,
                 "extension": extension,
-                "espg": espg_code,
+                "espg": crs.to_epsg(),
                 "fecha_creacion": fecha_creacion,
                 "fecha_modificacion": fecha_modificacion,
                 "minx": minx,
@@ -87,7 +89,8 @@ class TifServices:
                 "cantidad_descargas": cantidad_descargas
             }
             insert_archivo = Archivo(**data)
-            conn["archivos"].insert_one(insert_archivo.dict())
+            inserted_file = conn["archivos"].insert_one(insert_archivo.dict())
+            return inserted_file
         else:
             raise Exception("El archivo ya existe en la base de datos")
     

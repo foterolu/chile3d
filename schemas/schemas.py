@@ -33,9 +33,16 @@ class Admin(BaseModel):
     password : str
     created_at = datetime.utcnow()
 
+class Admin_institucion(BaseModel):
+    admin_id : PyObjectId = Field(default_factory=PyObjectId, alias="id")
+    institucion_id : str
+    nombre : str
+    insitucion : str
+    area_trabajo : str
+
 class Archivo(BaseModel):
     id : PyObjectId = Field(default_factory=PyObjectId, alias="id")
-    admin_id :int
+    admin : Admin_institucion
     nombre :str
     descripcion :str
     extension :str
@@ -52,6 +59,12 @@ class Archivo(BaseModel):
     institucion :str
     cantidad_descargas :int
 
+class Archivo_edit(BaseModel):
+    nombre :str
+    descripcion :str
+    keyword :str
+    topic_category :str
+    institucion :str
 class Institucion(BaseModel):
     id : PyObjectId = Field(default_factory=PyObjectId, alias="id")
     nombre : str
@@ -63,15 +76,12 @@ class Institucion(BaseModel):
     area_trabajo : str
     tipo_institucion : str
     created_at = datetime.utcnow()
-
-data = {
-   "institucion_id" : "638e0054212b2fe7c2d445e7",
-    "nombre" : "Nicola Tesla",
-    "email" : "nicola.tesla@sansano.usm.cl",
-    "rut" : "19732182-9",
-    "celular" : "+569 12345678",
-    "insitucion" : "Universidad Técnica Federico Santa María",
-    "area_trabajo" : "Ciencias de la ingeneria",
-    "is_superadmin" : False,
-    "password" : "chile3d",
-   }
+class Institucion_Editar(BaseModel):
+    nombre : str
+    descripcion : str
+    sitio_web : str
+    email : str
+    telefono : str
+    direccion : str
+    area_trabajo : str
+    tipo_institucion : str

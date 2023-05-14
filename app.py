@@ -7,7 +7,7 @@ import zipfile
 import io
 import pdb
 import rasterio
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, Request, Response, HTTPException
 from fastapi.responses import FileResponse
 from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
@@ -57,34 +57,14 @@ app.include_router(admin_ruta,tags=["admin"])
 app.include_router(login_ruta,tags=["login"])
 
 
-
-
-
-
   
-@app.post("/archivos/descargar")
-async def file_response(request: Request):
-    body = await request.body()
 
-    try:
-        data = json.loads(body)['files']
-        
-        url_list = list(data)
-        return zipfiles(url_list)
-
-    except Exception as e:
-        print(e)
-        return {"status" : e}
-    #return FileResponse()
 
 
 def zipfiles(filenames):
     zip_filename = "archive.zip"
-  
-
     s = io.BytesIO()
     zf = zipfile.ZipFile(s, "w")
-    
     for fpath in filenames:
         # Calculate path for file in zip
         fdir, fname = os.path.split(fpath)
@@ -109,12 +89,22 @@ def zipfiles(filenames):
 
 
 
+@archivos_ruta.post("/archivos/descargar")
+async def file_response(request: Request):
+    body = await request.body()
+    try:
+        data = json.loads(body)['files']
+        
+        url_list = list(data)
+        return zipfiles(url_list)
 
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="Error al descargar archivos")
+    #return FileResponse()
 
 @app.post("/process")
 async def file_process(request: Request):
     body = await request.body()
-
     try:
         data = json.loads(body)['files']
         scale = json.loads(body)['scale']
@@ -130,15 +120,11 @@ async def file_process(request: Request):
 @contextmanager
 def resample_raster(raster, scale=2):
     t = raster.transform
-
     transform = Affine(t.a / scale, t.b, t.c, t.d, t.e / scale, t.f)
     height = int(raster.height * scale)
     width  = int(raster.width  * scale)
-    print(f'{raster.width}x{raster.height} -> {width}x{height}')
-
     profile = raster.profile
     profile.update(transform=transform, driver='GTiff', height=height, width=width)
-
     data = raster.read(
             out_shape=(raster.count, height, width),
             resampling=Resampling.bilinear)
@@ -147,7 +133,6 @@ def resample_raster(raster, scale=2):
         with memfile.open(**profile) as dataset:
             dataset.write(data)
             del data
-
         with memfile.open() as dataset: 
             yield dataset
 
@@ -162,6 +147,5 @@ def resample_file(filename, scale=2):
             with rasterio.open(dst_filename, "w", **src.meta, compress='lzw', tiled=True ) as dest:
                 for band in range(1, resampled.count + 1):
                     dest.write_band(band, resampled.read(band))
-
     print(f'New File Size: {os.path.getsize(dst_filename)/(1024*1024)} MB')
     return dst_filename
