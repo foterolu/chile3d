@@ -1,21 +1,25 @@
-from contextlib import contextmanager
-import os 
 import rasterio
+import time
+import json
+import pdal
+import sys
+import os 
+
+from rasterio.warp import reproject, Resampling
 from rasterio import Affine, MemoryFile
 from rasterio.warp import Resampling
-import rasterio
-from rasterio.warp import reproject, Resampling
 from numpy import zeros
 
-import os
-import sys
-import time
-
-def resolution_reduction_TIFF(raster, scale=0.5, compression_method='lzw'):
+def resolution_reduction_TIFF(filename, scale=0.5, compression_method='deflate'):
     # Reduce resolution of TIFF file
     # Compression methods available: lossless: lzw, deflate, packbits, zstd. And lossy: jpeg
 
-    with rasterio.open(raster) as src:
+    if (scale > 0.7):
+        print('Scale too high, must be less than 0.7 due to memory limitations')
+        print('Original file will be returned')
+        return filename
+
+    with rasterio.open(filename) as src:
 
         data = src.read()
 
@@ -30,8 +34,7 @@ def resolution_reduction_TIFF(raster, scale=0.5, compression_method='lzw'):
                 dst_transform=new_transform, dst_crs=src.crs,
                 resampling=Resampling.bilinear)
 
-
-    dst_filename = 'temp_'+raster+'_'+compression_method+"_"+str(scale)+'.tif'
+    dst_filename = filename+'_'+compression_method+"_"+str(scale)+'.tif'
 
     with rasterio.open(dst_filename, 'w', driver='GTiff',
                     width=new_width, height=new_height,
@@ -40,45 +43,89 @@ def resolution_reduction_TIFF(raster, scale=0.5, compression_method='lzw'):
         dst.write(resampled_data)
 
     end = time.time()
-    print(f'Processing {raster}, scale: {scale}, compression: {compression_method}, time: {end-start}, file size: {os.path.getsize(dst_filename)/(1024*1024)} MB')
-
+    print(f'Processing {filename}, scale: {scale}, compression: {compression_method}, time: {end-start}, file size: {os.path.getsize(dst_filename)/(1024*1024)} MB')
     return dst_filename
 
 
-@contextmanager
-def resample_raster(raster, scale=0.5):
-    t = raster.transform
-    transform = Affine(t.a / scale, t.b, t.c, t.d, t.e / scale, t.f)
-    height = int(raster.height * scale)
-    width  = int(raster.width  * scale)
-    profile = raster.profile
-    profile.update(transform=transform, driver='GTiff', height=height, width=width)
-    data = raster.read(
-            out_shape=(raster.count, height, width),
-            resampling=Resampling.bilinear)
+def resolution_reduction_point_cloud(filename, cell=1, method='sample'):
+    # Reduce resolution of point cloud file
 
-    with MemoryFile() as memfile:
-        with memfile.open(**profile) as dataset:
-            dataset.write(data)
-            del data
-        with memfile.open() as dataset: 
-            yield dataset
+    dst_filename = filename.split('.')[0]
+    dst_filename = dst_filename+'_'+method+"_"+str(cell)+'.laz'
+
+    pipeline_dict = { "pipeline" : [
+        filename,
+        {   "type": f"filters.{method}",
+            "cell": cell},
+        dst_filename]}
+            
+    pipeline = json.dumps(pipeline_dict)
+    pipeline = pdal.Pipeline(pipeline)
+    count = pipeline.execute()
+    return dst_filename
 
 
-def resample_file(filename, scale=2):
+def resample_file(filename, scale=0.5):
     print(f'Processing {filename}')
     print(f'Scale: {scale}\n')
     print(f'Original File Size: {os.path.getsize(filename)/(1024*1024)} MB')
 
-    # with rasterio.open(filename, compress='lzw', tiled=True) as src:
-    #     with resample_raster(src, scale=scale) as resampled:
-    #         dst_filename = os.path.splitext(filename)[0] + '_downsampled.tif'
-    #         with rasterio.open(dst_filename, "w", **src.meta, compress='lzw', tiled=True ) as dest:
-    #             for band in range(1, resampled.count + 1):
-    #                 dest.write_band(band, resampled.read(band))
-    # print(f'New File Size: {os.path.getsize(dst_filename)/(1024*1024)} MB')
+    file_format = filename.split('.')[-1]
 
-    dst_filename = resolution_reduction_TIFF(raster=filename, scale=scale)
+    if file_format == 'tif':
+        dst_filename = resolution_reduction_TIFF(filename=filename, scale=scale)
+
+    elif file_format == 'laz' or file_format == 'las':
+        # TODO change cell parameter to scale
+        dst_filename = resolution_reduction_point_cloud(filename=filename, cell=scale)
+
 
 
     return dst_filename
+
+def point_cloud_to_tiff(filename, resolution, radius):
+# Convert point cloud to raster, using max value of points in each cell
+    
+    dst_filename = filename.replace("/laz/", "/tiff/")
+    dst_filename = dst_filename+'_ex_laz.tif'
+
+    pipeline_dict = {
+    "pipeline":[
+        filename,
+        {
+            "type":"writers.gdal",
+            "filename":dst_filename,
+            "resolution":resolution, # resolution x resolution raster cells size
+            "radius":radius, # neighborhood's radius to search for points. Default: sqrt(2) * resolution
+            "output_type":"max"
+        }]}
+
+    pipeline = json.dumps(pipeline_dict)
+
+    pipeline = pdal.Pipeline(pipeline)
+    count = pipeline.execute()
+
+    
+
+    return dst_filename
+
+def reformat_file(filename, radius=1, resolution=1):
+
+    print(f'Reformatting {filename}')
+    print(f'Radius: {radius}\n')
+    file_format = filename.split('.')[-1]
+
+    if file_format == 'laz' or file_format == 'las':
+        point_cloud_to_tiff(filename, resolution, radius)
+
+
+
+
+
+
+
+if __name__ == '__main__':
+    filename = sys.argv[1]
+    scale = float(sys.argv[2])
+    reformat_file(filename, 1, 0.5)
+
