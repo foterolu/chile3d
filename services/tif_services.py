@@ -68,7 +68,7 @@ class TifServices:
         maxy = p1[1]
         minx = p2[0]
         miny = p2[1]
-        print(conn["archivos"].find_one({"url":filename.path}) )
+        coordinates = [[minx, miny], [minx, maxy], [maxx, maxy], [maxx, miny], [minx, miny]]
         if conn["archivos"].find_one({"url":filename.path}) == None:
             data = {
                 "admin": admin_insitucion.dict(),
@@ -82,6 +82,7 @@ class TifServices:
                 "miny": miny,
                 "maxx": maxx,
                 "maxy": maxy,
+                "coordenadas": coordinates,
                 "url": filename.path,
                 "keyword": keyword,
                 "topic_category": topic_category,

@@ -1,4 +1,5 @@
 /env
 /storage
 /working/
-/__pycache__s
+/__pycache__
+*.pyc

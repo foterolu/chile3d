@@ -27,6 +27,7 @@ from routes.archivos import archivos_ruta
 from routes.institucion import institucion_ruta
 from routes.admin import admin_ruta
 from routes.login import login_ruta
+from globals import *
 
 from osgeo import gdal,osr
 
@@ -50,11 +51,23 @@ DATA_POLYGON = [
                         [-3.672853, 40.436128],
                         [-3.723834 , 40.436867]
                 ]
-DIRECTORY = 'storage/'
-app.include_router(institucion_ruta,tags=["institucion"])
-app.include_router(archivos_ruta,tags=["archivo"])
-app.include_router(admin_ruta,tags=["admin"])
-app.include_router(login_ruta,tags=["login"])
+app.include_router(institucion_ruta,tags=["Institutions"])
+app.include_router(archivos_ruta,tags=["Files"])
+app.include_router(admin_ruta,tags=["Admins"])
+app.include_router(login_ruta,tags=["Login"])
+
+#check if DIRECTORY exists if not create it
+if not os.path.exists(DIRECTORY):
+    os.makedirs(DIRECTORY)
+if not os.path.exists(WORKING_DIRECTORY):
+    os.makedirs(WORKING_DIRECTORY)
+if not os.path.exists(DIRECTORY + 'tif/'):
+    os.makedirs(DIRECTORY + 'tif/')
+if not os.path.exists(DIRECTORY + 'laz/'):
+    os.makedirs(DIRECTORY + 'laz/')
+if not os.path.exists(DIRECTORY + 'las/'):
+    os.makedirs(DIRECTORY + 'las/')
+    
 
 
   
@@ -89,7 +102,7 @@ def zipfiles(filenames):
 
 
 
-@archivos_ruta.post("/archivos/descargar")
+@archivos_ruta.post("/files/descargar")
 async def file_response(request: Request):
     body = await request.body()
     try:

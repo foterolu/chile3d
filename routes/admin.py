@@ -44,7 +44,7 @@ async def get_admin():
 
     return admins
 
-@admin_ruta.get('/admin/obtener/{id}', response_model=Admin,status_code=200)
+@admin_ruta.get('/admin/{id}', response_model=Admin,status_code=200)
 async def get_admin(id: str):
     try:
         db = MongoClient(MONGO_STRING)["chile3d"]
@@ -60,7 +60,7 @@ async def get_admin(id: str):
 
 
 
-@admin_ruta.post('/admin/crear', response_model=Admin,status_code=201)
+@admin_ruta.post('/admin', response_model=Admin,status_code=201)
 async def crear_admin(admin: Admin):
     db = MongoClient(MONGO_STRING)["chile3d"]
     admin = admin.dict()
@@ -73,7 +73,7 @@ async def crear_admin(admin: Admin):
         raise HTTPException(status_code=400, detail="Email ya existe")
     
 
-@admin_ruta.put('/admin/actualizar/{id}',status_code=204)
+@admin_ruta.put('/admin/{id}',status_code=204)
 async def update_admin(id: str, admin: Admin):
     db = MongoClient(MONGO_STRING)["chile3d"]
     admin = admin.dict()

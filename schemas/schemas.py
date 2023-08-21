@@ -33,7 +33,7 @@ class Admin(BaseModel):
     password : str
     created_at = datetime.utcnow()
 
-class Admin_institucion(BaseModel):
+class AdminInstitucion(BaseModel):
     admin_id : PyObjectId = Field(default_factory=PyObjectId, alias="id")
     institucion_id : str
     nombre : str
@@ -42,7 +42,7 @@ class Admin_institucion(BaseModel):
 
 class Archivo(BaseModel):
     id : PyObjectId = Field(default_factory=PyObjectId, alias="id")
-    admin : Admin_institucion
+    admin : AdminInstitucion
     nombre :str
     descripcion :str
     extension :str
@@ -53,13 +53,14 @@ class Archivo(BaseModel):
     miny :float
     maxx :float
     maxy :float
+    coordenadas :list
     url :str
     keyword :str
     topic_category :str
     institucion :str
     cantidad_descargas :int
 
-class Archivo_edit(BaseModel):
+class ArchivosEditar(BaseModel):
     nombre :str
     descripcion :str
     keyword :str
@@ -76,7 +77,7 @@ class Institucion(BaseModel):
     area_trabajo : str
     tipo_institucion : str
     created_at = datetime.utcnow()
-class Institucion_Editar(BaseModel):
+class InstitucionEditar(BaseModel):
     nombre : str
     descripcion : str
     sitio_web : str

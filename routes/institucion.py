@@ -1,6 +1,6 @@
 from pymongo import MongoClient
 from fastapi import APIRouter, HTTPException, Depends
-from schemas.schemas import Institucion,Institucion_Editar
+from schemas.schemas import Institucion,InstitucionEditar
 from typing import List,Dict
 from datetime import datetime
 from bson.objectid import ObjectId
@@ -13,20 +13,51 @@ from globals import *
 
 institucion_ruta = APIRouter(dependencies=[Depends(read_users_me)])
 
-@institucion_ruta.get('/institucion/obtener/texto/{nombre}', response_model=List[Institucion],status_code=200)
-async def get_institucion(nombre: str,depends = Depends(read_users_me)):
-    conn = MongoClient(MONGO_STRING)["chile3d"]
-    index = conn["institucion"].create_index([('nombre', 'text')])
-    instituciones = list(conn["institucion"].find({"$text": {"$search": nombre}}))
-    return instituciones
 
-@institucion_ruta.get('/institucion', response_model=List[Institucion],status_code=200)
-async def get_institucion(depends = Depends(read_users_me)):
-    db = MongoClient(MONGO_STRING)["chile3d"]
-    instituciones = list(db.institucion.find({}))
-    return instituciones
+@institucion_ruta.get('/institutions', response_model=List[Institucion],status_code=200)
+async def get_institucion( nombre: str = None,
+    descripcion: str = None,
+    sitio_web: str = None,
+    email: str = None,
+    telefono: str = None,
+    direccion: str = None,
+    area_trabajo: str = None,
+    tipo_institucion: str = None,
+    fecha_incio: str = None,
+    fecha_fin: str = None,
+):
+    conn=  MongoClient(MONGO_STRING)["chile3d"]["institucion"]
+    query = {}
 
-@institucion_ruta.get('/institucion/obtener/id/{id}', response_model=Institucion,status_code=200)
+    if nombre:
+        query["nombre"] = nombre
+    if descripcion:
+        query["descripcion"] = descripcion
+    if sitio_web:
+        query["sitio_web"] = sitio_web
+    if email:
+        query["email"] = email
+    if telefono:
+        query["telefono"] = telefono
+    if direccion:
+        query["direccion"] = direccion
+    if area_trabajo:
+        query["area_trabajo"] = area_trabajo
+    if tipo_institucion:
+        query["tipo_institucion"] = tipo_institucion
+    if fecha_incio and fecha_fin:
+        try:
+            fecha_incio = datetime.strptime(fecha_incio, '%Y-%m-%d')
+            fecha_fin = datetime.strptime(fecha_fin, '%Y-%m-%d')
+            query["created_at"] = {"$gte": fecha_incio, "$lt": fecha_fin}
+        except Exception as e:
+            raise HTTPException(status_code=400, detail="Formato de fecha incorrecto")
+
+    return list(
+        conn.find(query)
+    )
+
+@institucion_ruta.get('/institutions/{id}', response_model=Institucion,status_code=200)
 async def get_institucion(id: str,depends = Depends(read_users_me)):
     try:
         db = MongoClient(MONGO_STRING)["chile3d"]
@@ -39,7 +70,7 @@ async def get_institucion(id: str,depends = Depends(read_users_me)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@institucion_ruta.post('/institucion/crear', response_model=Institucion,status_code=201)
+@institucion_ruta.post('/institutions', response_model=Institucion,status_code=201)
 async def crear_institucion(institucion: Institucion,depends = Depends(read_users_me)):
     db = MongoClient(MONGO_STRING)["chile3d"]
     institucion = institucion.dict()
@@ -53,22 +84,23 @@ async def crear_institucion(institucion: Institucion,depends = Depends(read_user
   
     
 
-@institucion_ruta.put('/institucion/actualizar/{id}',status_code=204)
-async def update_institucion(id: str, institucion: Institucion_Editar,depends = Depends(read_users_me)):
+@institucion_ruta.put('/institutions/{id}',status_code=204)
+async def update_institucion(id: str, institucion: InstitucionEditar,depends = Depends(read_users_me)):
     db = MongoClient(MONGO_STRING)["chile3d"]
     institucion = institucion.dict()
-    notNullItems = {k: v for k, v in institucion.dict().items() if v is not None and v != ""}
+    notNullItems = {k: v for k, v in institucion.items() if v is not None and v != ""}
     institucion['updated_at'] = datetime.utcnow()
-    if db.institucion.update_one({"_id": id}, {"$set": notNullItems}):
+    result = db.institucion.update_one({"id": ObjectId(id)}, {"$set": notNullItems})
+    if result.matched_count >0:
         return institucion  
     else:
         raise HTTPException(status_code=404, detail="Institucion no encontrada")
     
 
-@institucion_ruta.delete('/institucion/eliminar/{id}',status_code=204)
+@institucion_ruta.delete('/institutions/{id}',status_code=204)
 async def delete_institucion(id: str, depends = Depends(read_users_me)):
     db = MongoClient(MONGO_STRING)["chile3d"]
-    if db.institucion.delete_one({"_id": id}):
+    if db.institucion.delete_one({"id": ObjectId(id)}):
         return {"message": "Institucion eliminada"}
     else:
         raise HTTPException(status_code=404, detail="Institucion no encontrada")

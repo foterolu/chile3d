@@ -29,7 +29,7 @@ class LazServices:
         metadata = json.loads(metadata)
         return metadata
 
-    def get_inside_list(self,filename,features,inside):
+    def get_inside_list(self,filename,features,inside,AdminInstitucion):
         conn = MongoClient(MONGO_STRING)["chile3d"]
         admin_id = 1
         nombre = filename.name
@@ -70,10 +70,11 @@ class LazServices:
                 maxy = p1[1]
                 minx = p2[0]
                 miny = p2[1]
+                coordinates = [[minx, miny], [minx, maxy], [maxx, maxy], [maxx, miny], [minx, miny]]
 
                 if conn["archivos"].find_one({"url": DIRECTORY + "laz/" + filename.name}) == None:
                     data = {
-                    "admin_id": admin_id,
+                    "admin":AdminInstitucion.dict() ,
                     "nombre": nombre,
                     "descripcion": descripcion,
                     "extension": extension,
@@ -84,6 +85,7 @@ class LazServices:
                     "miny": miny,
                     "maxx": maxx,
                     "maxy": maxy,
+                    "coordenadas": coordinates,
                     "url": filename.path,
                     "keyword": keyword,
                     "topic_category": topic_category,
@@ -97,5 +99,5 @@ class LazServices:
                 else:
                     raise Exception("El archivo ya existe en la base de datos")
         except Exception as e:
-            print(e)
+            raise Exception("Error al extraer metadata del archivo laz")
         return inside
