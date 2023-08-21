@@ -7,6 +7,8 @@ import zipfile
 import io
 import pdb
 import rasterio
+import source.file_processing as fp
+
 from fastapi import FastAPI, Request, Response, HTTPException
 from fastapi.responses import FileResponse
 from shapely.geometry import Point
@@ -19,7 +21,6 @@ from pymongo import MongoClient
 from rasterio.enums import Resampling
 from rasterio import Affine, MemoryFile
 from rasterio.warp import reproject, Resampling
-from contextlib import contextmanager
 from services.laz_services import LazServices
 from services.shp_services import ShapefileServices
 from services.tif_services import TifServices
@@ -70,9 +71,6 @@ if not os.path.exists(DIRECTORY + 'las/'):
     
 
 
-  
-
-
 
 def zipfiles(filenames):
     zip_filename = "archive.zip"
@@ -115,6 +113,7 @@ async def file_response(request: Request):
         raise HTTPException(status_code=400, detail="Error al descargar archivos")
     #return FileResponse()
 
+# Reduce resolution of a single raster TIFF file
 @app.post("/process")
 async def file_process(request: Request):
     body = await request.body()
@@ -122,43 +121,9 @@ async def file_process(request: Request):
         data = json.loads(body)['files']
         scale = json.loads(body)['scale']
         #url_list = list(data)
-        file_name = resample_file(data, scale)
+        file_name = fp.resample_file(data, scale)
         return {"resample_file" : str(file_name)}
     except Exception as e:
         print(e)
         return {"exception": "failed", "status" : e}
-    #return FileResponse()
 
-
-@contextmanager
-def resample_raster(raster, scale=2):
-    t = raster.transform
-    transform = Affine(t.a / scale, t.b, t.c, t.d, t.e / scale, t.f)
-    height = int(raster.height * scale)
-    width  = int(raster.width  * scale)
-    profile = raster.profile
-    profile.update(transform=transform, driver='GTiff', height=height, width=width)
-    data = raster.read(
-            out_shape=(raster.count, height, width),
-            resampling=Resampling.bilinear)
-
-    with MemoryFile() as memfile:
-        with memfile.open(**profile) as dataset:
-            dataset.write(data)
-            del data
-        with memfile.open() as dataset: 
-            yield dataset
-
-
-def resample_file(filename, scale=2):
-    print(f'Processing {filename}')
-    print(f'Scale: {scale}\n')
-    print(f'Original File Size: {os.path.getsize(filename)/(1024*1024)} MB')
-    with rasterio.open(filename, compress='lzw', tiled=True) as src:
-        with resample_raster(src, scale=scale) as resampled:
-            dst_filename = os.path.splitext(filename)[0] + '_downsampled.tif'
-            with rasterio.open(dst_filename, "w", **src.meta, compress='lzw', tiled=True ) as dest:
-                for band in range(1, resampled.count + 1):
-                    dest.write_band(band, resampled.read(band))
-    print(f'New File Size: {os.path.getsize(dst_filename)/(1024*1024)} MB')
-    return dst_filename
