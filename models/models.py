@@ -9,7 +9,7 @@ class Admin(BaseModel):
     email = str
     rut = str
     celular = str
-    insitucion = str
+    institucion = str
     area_trabajo = str
     is_superadmin = bool
     password = str

@@ -114,56 +114,36 @@ async def file_response(request: Request):
 @archivos_ruta.post("/files/polygon",status_code=200,response_model=List[Archivo])
 async def buscar_archivos(request: geojson_pydantic.FeatureCollection[geojson_pydantic.Polygon,Dict]):
     conn = MongoClient(MONGO_STRING)["chile3d"]
-    
-    # data = list(conn["archivos"].find())
-    # inside = []
     body = request
     MyPolygon = geojson_pydantic.FeatureCollection(features=body.features)
     gj = MyPolygon.dict()
-    
+    inside = []
     for features in gj['features']:
-        polygon_coordinates  =features['geometry']['coordinates'][0]
+        polygon_coordinates  =features['geometry']['coordinates']
+        
         query = {
             "coordenadas": {
                 "$geoIntersects": {
                     "$geometry": {
                         "type": "Polygon",
-                        "coordinates": [polygon_coordinates]
+                        "coordinates": polygon_coordinates,
+                       
                     }
                 }
             }
         }
         retrieved_documents = list(conn["archivos"].find(query))
-        if len(retrieved_documents) > 0:
+        if len(retrieved_documents) > 0:    
+            inside.extend(retrieved_documents)
+    return inside
 
-            return retrieved_documents
-
-
-        # for archivo in data:
-        #     modelo = Archivo(**archivo)
-        #     minx = archivo["minx"]
-        #     miny = archivo["miny"]
-        #     maxx = archivo["maxx"]
-        #     maxy = archivo["maxy"]
-        #     p1 = Point(minx, miny)
-        #     p2 = Point(minx, maxy)
-        #     p3 = Point(maxx, maxy)
-        #     p4 = Point(maxx, miny)
-        #     polygon = Polygon(features['geometry']['coordinates'][0])
-       
-        #     for point in [p1, p2, p3, p4]:
-        #         if polygon.contains(point):
-        #             inside.append(modelo)
-        #             break
-    
-    return []
       
 
 @archivos_ruta.post("/files",status_code=201)
 def subir_archivo(file : List[UploadFile]  = File(...), admin = Depends(read_users_me)):
     os.makedirs(WORKING_DIRECTORY, exist_ok=True)
-    print(admin)
     admin["admin_id"] = admin["id"]
+    print(admin)
     admin_institucion = AdminInstitucion(**admin)
     names =[]
     for file in file:
@@ -184,9 +164,6 @@ def subir_archivo(file : List[UploadFile]  = File(...), admin = Depends(read_use
                 return {"message": "There was an error uploading the file"}
             finally:
                 file.file.close()
-
-        #se indexa el archivo subido
-
         else:
             raise HTTPException(status_code=400, detail="Invalid file extension")
     
@@ -199,18 +176,18 @@ def subir_archivo(file : List[UploadFile]  = File(...), admin = Depends(read_use
         raise HTTPException(status_code=400, detail=str(e))
     
 
-def indexar(filename,AdminInstitucion):
+def indexar(filename,admin_institucion):
     conn = MongoClient(MONGO_STRING)["chile3d"]
     inside = []
     if "archivos" not in conn.list_collection_names():
         conn.create_collection("archivos")
     extension =  filename.name.split('.')[-1]
     if extension == "tif":
-        return TifServices().get_inside_list(filename,[],inside,AdminInstitucion)
+        return TifServices().get_inside_list(filename,[],inside,admin_institucion)
     elif extension == "laz":
         #se utiliza pdal para extraer metadata de los archivos laz
         #se extrae la proyección de los archivos laz, que es un WKT de OGC
-        return LazServices().get_inside_list(filename,[],inside,AdminInstitucion)
+        return LazServices().get_inside_list(filename,[],inside,admin_institucion)
 
 
 

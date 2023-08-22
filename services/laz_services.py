@@ -29,7 +29,7 @@ class LazServices:
         metadata = json.loads(metadata)
         return metadata
 
-    def get_inside_list(self,filename,features,inside,AdminInstitucion):
+    def get_inside_list(self,filename,features,inside,admin_institucion):
         conn = MongoClient(MONGO_STRING)["chile3d"]
         admin_id = 1
         nombre = filename.name
@@ -51,9 +51,7 @@ class LazServices:
             metadata = self.get_metadata(filename)
             spatial = metadata['metadata']['comp_spatialreference']
             if spatial != '':
-                
                 srs = osr.SpatialReference(wkt=spatial)
-            
                 espg_code = srs.GetAttrValue('AUTHORITY',1)
 
                 #se extrae bbox de los archivos laz y se transforma a WSG84 para indexar en mongo
@@ -70,11 +68,15 @@ class LazServices:
                 maxy = p1[1]
                 minx = p2[0]
                 miny = p2[1]
-                coordinates = [[minx, miny], [minx, maxy], [maxx, maxy], [maxx, miny], [minx, miny]]
-
+                coordinates =  [[[minx, miny], [minx, maxy], [maxx, maxy], [maxx, miny], [minx, miny]]]
+                geometry = {
+                    "type": "Polygon",
+                    "coordinates": coordinates
+                }
+                admin_institucion = admin_institucion.dict()
                 if conn["archivos"].find_one({"url": DIRECTORY + "laz/" + filename.name}) == None:
                     data = {
-                    "admin":AdminInstitucion.dict() ,
+                    "admin":admin_institucion ,
                     "nombre": nombre,
                     "descripcion": descripcion,
                     "extension": extension,
@@ -85,11 +87,11 @@ class LazServices:
                     "miny": miny,
                     "maxx": maxx,
                     "maxy": maxy,
-                    "coordenadas": coordinates,
+                    "coordenadas": geometry,
                     "url": filename.path,
                     "keyword": keyword,
                     "topic_category": topic_category,
-                    "institucion": institucion,
+                    "institucion": admin_institucion["institucion"],
                     "cantidad_descargas": cantidad_descargas
 
                 }

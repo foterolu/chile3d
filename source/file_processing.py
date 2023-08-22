@@ -1,7 +1,7 @@
 import rasterio
 import time
 import json
-import pdal
+#import pdal
 import sys
 import os 
 

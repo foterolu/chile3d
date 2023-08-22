@@ -31,7 +31,7 @@ from globals import *
 
 
 class TifServices:
-    def get_inside_list(self, filename,features, inside, admin_insitucion):
+    def get_inside_list(self, filename,features, inside, admin_institucion):
    
         conn = MongoClient(MONGO_STRING)["chile3d"]
     
@@ -68,10 +68,15 @@ class TifServices:
         maxy = p1[1]
         minx = p2[0]
         miny = p2[1]
-        coordinates = [[minx, miny], [minx, maxy], [maxx, maxy], [maxx, miny], [minx, miny]]
+        coordinates = [[[minx, miny], [minx, maxy], [maxx, maxy], [maxx, miny], [minx, miny]]]
+        geometry = {
+            "type": "Polygon",
+            "coordinates": coordinates
+        }
+        AdminInstitucion = AdminInstitucion.dict()
         if conn["archivos"].find_one({"url":filename.path}) == None:
             data = {
-                "admin": admin_insitucion.dict(),
+                "admin": admin_institucion.dict(),
                 "nombre": nombre,
                 "descripcion": descripcion,
                 "extension": extension,
@@ -82,7 +87,7 @@ class TifServices:
                 "miny": miny,
                 "maxx": maxx,
                 "maxy": maxy,
-                "coordenadas": coordinates,
+                "coordenadas": geometry,
                 "url": filename.path,
                 "keyword": keyword,
                 "topic_category": topic_category,

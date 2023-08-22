@@ -27,7 +27,7 @@ class Admin(BaseModel):
     email : str
     rut : str
     celular : str
-    insitucion : str
+    institucion : str
     area_trabajo : str
     is_superadmin : bool = False
     password : str
@@ -37,7 +37,7 @@ class AdminInstitucion(BaseModel):
     admin_id : PyObjectId = Field(default_factory=PyObjectId, alias="id")
     institucion_id : str
     nombre : str
-    insitucion : str
+    institucion : str
     area_trabajo : str
 
 class Archivo(BaseModel):
@@ -53,7 +53,7 @@ class Archivo(BaseModel):
     miny :float
     maxx :float
     maxy :float
-    coordenadas :list
+    coordenadas :dict
     url :str
     keyword :str
     topic_category :str
