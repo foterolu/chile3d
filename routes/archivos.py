@@ -40,6 +40,8 @@ EXTENSIONS = ('.shp' ,'.tif','.tiff','.laz','.las')
 
 @archivos_ruta.get("/files")
 async def get_archivos(
+    fetch: int = 0,
+    skip: int = 0,
     nombre: str = None,
     descripcion: str = None,
     extension: str = None,
@@ -82,7 +84,7 @@ async def get_archivos(
     if cantidad_descargas:
         query["cantidad_descargas"] = cantidad_descargas
 
-    archivos = conn["archivos"].find(query)
+    archivos = conn["archivos"].find(query).skip(skip).limit(fetch)
 
     return list(archivos)
 
@@ -148,6 +150,7 @@ def subir_archivo(file : List[UploadFile]  = File(...), admin = Depends(read_use
     names =[]
     for file in file:
         names.append(file.filename) 
+        print(file.filename)
         if file.filename.lower().endswith(EXTENSIONS):
             try:
                 contents = file.file.read()

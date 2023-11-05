@@ -6,6 +6,7 @@ from datetime import datetime
 from bson.objectid import ObjectId
 from fastapi.security import OAuth2PasswordBearer
 from routes.login import read_users_me
+from bson.regex import Regex
 
 from globals import *
 
@@ -30,7 +31,7 @@ async def get_institucion( nombre: str = None,
     query = {}
 
     if nombre:
-        query["nombre"] = nombre
+        query["nombre"] = {"$regex": Regex(nombre, "i")}
     if descripcion:
         query["descripcion"] = descripcion
     if sitio_web:

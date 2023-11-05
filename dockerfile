@@ -1,4 +1,4 @@
-FROM python:3
+FROM ubuntu:22.04
 WORKDIR /
 
 COPY . / 

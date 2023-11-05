@@ -86,6 +86,7 @@ async def authenticate_admin(form_data: OAuth2PasswordRequestForm = Depends()):
 async def get_current_user(token: str = Depends(ouath2_scheme)):
     db = MongoClient(MONGO_STRING)["chile3d"]
     admin = db["admin"].find_one({"email" : token})
+    return admin
 
 @login_ruta.post("/token", response_model=Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):

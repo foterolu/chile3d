@@ -15,7 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image
 from PIL.TiffTags import TAGS
 from pymongo import MongoClient
-
+from schemas.schemas import Archivo
 from rasterio.enums import Resampling
 from rasterio import Affine, MemoryFile
 from rasterio.warp import reproject, Resampling
@@ -73,7 +73,8 @@ class TifServices:
             "type": "Polygon",
             "coordinates": coordinates
         }
-        AdminInstitucion = AdminInstitucion.dict()
+        
+       
         if conn["archivos"].find_one({"url":filename.path}) == None:
             data = {
                 "admin": admin_institucion.dict(),
