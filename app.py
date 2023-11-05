@@ -8,7 +8,6 @@ import io
 import pdb
 import rasterio
 import source.file_processing as fp
-
 from fastapi import FastAPI, Request, Response, HTTPException
 from fastapi.responses import FileResponse
 from shapely.geometry import Point
@@ -17,7 +16,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image
 from PIL.TiffTags import TAGS
 from pymongo import MongoClient
-
 from rasterio.enums import Resampling
 from rasterio import Affine, MemoryFile
 from rasterio.warp import reproject, Resampling
@@ -29,7 +27,7 @@ from routes.institucion import institucion_ruta
 from routes.admin import admin_ruta
 from routes.login import login_ruta
 from globals import *
-
+from dotenv import dotenv_values
 from osgeo import gdal,osr
 
 app = FastAPI()
@@ -43,15 +41,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# poligino de datos de muestra extraidos del portal de descargas CNIG WSG84,
-# almacenado temporalmente en storage/
-DATA_POLYGON = [
-                        [-3.723834 , 40.436867],
-                        [-3.723805 , 40.405078],
-                        [-3.670911, 40.404709],
-                        [-3.672853, 40.436128],
-                        [-3.723834 , 40.436867]
-                ]
+config = dotenv_values(".env")
+
+@app.on_event("startup")
+def startup_db_client():
+    app.mongodb_client = MongoClient(config["MONGO_STRING_CONECTION"])
+    app.database = app.mongodb_client[config["DB_NAME"]]
+
+@app.on_event("shutdown")
+def shutdown_db_client():
+    app.mongodb_client.close()
+
+
+            
 app.include_router(institucion_ruta,tags=["Institutions"])
 app.include_router(archivos_ruta,tags=["Files"])
 app.include_router(admin_ruta,tags=["Admins"])
