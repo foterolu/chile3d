@@ -17,6 +17,7 @@ from pymongo import MongoClient
 from schemas.schemas import Archivo
 from datetime import datetime
 from globals import *
+from config.database import database
 
 
 class LazServices:
@@ -30,7 +31,7 @@ class LazServices:
         return metadata
 
     def get_inside_list(self,filename,features,inside,admin_institucion):
-        conn = MongoClient(MONGO_STRING)["chile3d"]
+        conn = database
         admin_id = 1
         nombre = filename.name
         descripcion = "descripcion"

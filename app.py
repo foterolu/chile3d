@@ -26,6 +26,7 @@ from routes.archivos import archivos_ruta
 from routes.institucion import institucion_ruta
 from routes.admin import admin_ruta
 from routes.login import login_ruta
+from config.database import database, mongodb_client
 from globals import *
 from dotenv import dotenv_values
 from osgeo import gdal,osr
@@ -43,15 +44,10 @@ app.add_middleware(
 
 config = dotenv_values(".env")
 
-@app.on_event("startup")
-def startup_db_client():
-    app.mongodb_client = MongoClient(config["MONGO_STRING_CONECTION"])
-    app.database = app.mongodb_client[config["DB_NAME"]]
 
 @app.on_event("shutdown")
 def shutdown_db_client():
-    app.mongodb_client.close()
-
+    mongodb_client.close()
 
             
 app.include_router(institucion_ruta,tags=["Institutions"])
@@ -72,48 +68,6 @@ if not os.path.exists(DIRECTORY + 'las/'):
     os.makedirs(DIRECTORY + 'las/')
     
 
-
-
-def zipfiles(filenames):
-    zip_filename = "archive.zip"
-    s = io.BytesIO()
-    zf = zipfile.ZipFile(s, "w")
-    for fpath in filenames:
-        # Calculate path for file in zip
-        fdir, fname = os.path.split(fpath)
-        print(fdir)
-        if fname != '':
-        # Add file, at correct path 
-            zf.write(fpath, fname)
-        else:
-            for dirname, subdirs, files in os.walk(fpath):
-                print(subdirs)
-                for filename in files:
-                    
-                    # Add file, at correct path
-                    zf.write(os.path.join(dirname, filename))
-    # Must close zip for all contents to be written
-    zf.close()
-    # Grab ZIP file from in-memory, make response with correct MIME-type
-    resp = Response(s.getvalue(), media_type="application/x-zip-compressed", headers={
-        'Content-Disposition': f'attachment;filename={zip_filename}'
-    })
-    return resp
-
-
-
-@archivos_ruta.post("/files/descargar")
-async def file_response(request: Request):
-    body = await request.body()
-    try:
-        data = json.loads(body)['files']
-        
-        url_list = list(data)
-        return zipfiles(url_list)
-
-    except Exception as e:
-        raise HTTPException(status_code=400, detail="Error al descargar archivos")
-    #return FileResponse()
 
 # Reduce resolution of a single raster TIFF file
 @app.post("/process")

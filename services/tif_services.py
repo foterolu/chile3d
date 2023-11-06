@@ -27,13 +27,13 @@ from datetime import datetime
 
 from osgeo import gdal,osr
 from globals import *
-
+from config.database import database
 
 
 class TifServices:
     def get_inside_list(self, filename,features, inside, admin_institucion):
    
-        conn = MongoClient(MONGO_STRING)["chile3d"]
+        conn = database
     
         nombre = filename.name
         descripcion = "descripcion"

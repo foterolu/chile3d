@@ -10,6 +10,7 @@ from pydantic import BaseModel
 from jose import JWTError, jwt
 from globals import *
 from routes.login import read_users_me
+from config.database import database
 
 
 
@@ -39,7 +40,7 @@ class TokenData(BaseModel):
 
 @admin_ruta.get('/admin', response_model=List[Admin],status_code=200)
 async def get_admin():
-    db = MongoClient(MONGO_STRING)["chile3d"]
+    db = database
     admins = list(db["admin"].find({}))
 
     return admins
@@ -47,7 +48,7 @@ async def get_admin():
 @admin_ruta.get('/admin/{id}', response_model=Admin,status_code=200)
 async def get_admin(id: str):
     try:
-        db = MongoClient(MONGO_STRING)["chile3d"]
+        db = database
         admin = db["admin"].find_one({"id": ObjectId(id)})
         if admin:
 
@@ -62,7 +63,7 @@ async def get_admin(id: str):
 
 @admin_ruta.post('/admin', response_model=Admin,status_code=201)
 async def crear_admin(admin: Admin):
-    db = MongoClient(MONGO_STRING)["chile3d"]
+    db = database
     admin = admin.dict()
     if db["admin"].find_one({"email": admin["email"]}) == None:
         admin["password"] = Hasher.get_password_hash(admin["password"])
@@ -75,7 +76,7 @@ async def crear_admin(admin: Admin):
 
 @admin_ruta.put('/admin/{id}',status_code=204)
 async def update_admin(id: str, admin: Admin):
-    db = MongoClient(MONGO_STRING)["chile3d"]
+    db = database
     admin = admin.dict()
     admin['updated_at'] = datetime.utcnow()
     db["admin"].update

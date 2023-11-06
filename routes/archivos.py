@@ -1,3 +1,15 @@
+import datetime
+import geojson
+import subprocess as sp
+import json
+import pyproj
+import os
+import zipfile
+import io
+import pdb
+import requests
+import rasterio
+import geojson_pydantic
 
 from typing import List,Dict
 from fastapi import FastAPI, Request, Response,Depends
@@ -20,18 +32,7 @@ from routes.login import read_users_me
 from pathlib import Path
 from bson.objectid import ObjectId
 from bson.regex import Regex
-import datetime
-import geojson
-import subprocess as sp
-import json
-import pyproj
-import os
-import zipfile
-import io
-import pdb
-import requests
-import rasterio
-import geojson_pydantic
+from config.database import database
 
 archivos_ruta = APIRouter()
 EXTENSIONS = ('.shp' ,'.tif','.tiff','.laz','.las')
@@ -54,7 +55,7 @@ async def get_archivos(
     institucion: str = None,
     cantidad_descargas: int = None
 ):
-    conn = MongoClient(MONGO_STRING)["chile3d"]
+    conn = database
     query = {}
     
     if nombre:
@@ -92,7 +93,7 @@ async def get_archivos(
 
 @archivos_ruta.get('/files/{id}')
 async def get_archivo():
-    conn = MongoClient(MONGO_STRING)["chile3d"]
+    conn = database
     try:
         return conn["archivos"].find_one({"id": ObjectId(id)})
     except Exception as e:
@@ -115,7 +116,7 @@ async def file_response(request: Request):
 
 @archivos_ruta.post("/files/polygon",status_code=200,response_model=List[Archivo])
 async def buscar_archivos(request: geojson_pydantic.FeatureCollection[geojson_pydantic.Polygon,Dict]):
-    conn = MongoClient(MONGO_STRING)["chile3d"]
+    conn = database
     body = request
     MyPolygon = geojson_pydantic.FeatureCollection(features=body.features)
     gj = MyPolygon.dict()
@@ -180,7 +181,7 @@ def subir_archivo(file : List[UploadFile]  = File(...), admin = Depends(read_use
     
 
 def indexar(filename,admin_institucion):
-    conn = MongoClient(MONGO_STRING)["chile3d"]
+    conn = database
     inside = []
     if "archivos" not in conn.list_collection_names():
         conn.create_collection("archivos")
@@ -196,7 +197,7 @@ def indexar(filename,admin_institucion):
 
 @archivos_ruta.patch("/files/{id}",status_code=204)
 def actualizar_archivo(id: str,archivo: ArchivosEditar, depends = Depends(read_users_me)):
-    conn = MongoClient(MONGO_STRING)["chile3d"]
+    conn = database
     notNullItems = {k: v for k, v in archivo.dict().items() if v is not None and v != ""}
     fecha_modificacion = datetime.datetime.now()
     notNullItems["fecha_modificacion"] = fecha_modificacion
@@ -207,7 +208,7 @@ def actualizar_archivo(id: str,archivo: ArchivosEditar, depends = Depends(read_u
 
 @archivos_ruta.delete("/files/{id}",status_code=204)
 def eliminar_archivo(id: str, depends = Depends(read_users_me)):
-    conn = MongoClient(MONGO_STRING)["chile3d"]
+    conn = database
     archivo = conn["archivos"].find_one({"id": ObjectId(id)})
     url = archivo["url"]
     #remove from working directory

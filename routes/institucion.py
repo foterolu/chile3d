@@ -7,8 +7,8 @@ from bson.objectid import ObjectId
 from fastapi.security import OAuth2PasswordBearer
 from routes.login import read_users_me
 from bson.regex import Regex
-
 from globals import *
+from config.database import database
 
 
 
@@ -27,7 +27,7 @@ async def get_institucion( nombre: str = None,
     fecha_incio: str = None,
     fecha_fin: str = None,
 ):
-    conn=  MongoClient(MONGO_STRING)["chile3d"]["institucion"]
+    conn=  database["institucion"]
     query = {}
 
     if nombre:
@@ -61,7 +61,7 @@ async def get_institucion( nombre: str = None,
 @institucion_ruta.get('/institutions/{id}', response_model=Institucion,status_code=200)
 async def get_institucion(id: str,depends = Depends(read_users_me)):
     try:
-        db = MongoClient(MONGO_STRING)["chile3d"]
+        db = database
         institucion = db.institucion.find_one({"id": ObjectId(id)})
         if institucion:
 
@@ -73,7 +73,7 @@ async def get_institucion(id: str,depends = Depends(read_users_me)):
 
 @institucion_ruta.post('/institutions', response_model=Institucion,status_code=201)
 async def crear_institucion(institucion: Institucion,depends = Depends(read_users_me)):
-    db = MongoClient(MONGO_STRING)["chile3d"]
+    db = database
     institucion = institucion.dict()
     email = institucion['email']
     if db.institucion.find_one({"email": email}):
@@ -87,7 +87,7 @@ async def crear_institucion(institucion: Institucion,depends = Depends(read_user
 
 @institucion_ruta.put('/institutions/{id}',status_code=204)
 async def update_institucion(id: str, institucion: InstitucionEditar,depends = Depends(read_users_me)):
-    db = MongoClient(MONGO_STRING)["chile3d"]
+    db = database
     institucion = institucion.dict()
     notNullItems = {k: v for k, v in institucion.items() if v is not None and v != ""}
     institucion['updated_at'] = datetime.utcnow()
@@ -100,7 +100,7 @@ async def update_institucion(id: str, institucion: InstitucionEditar,depends = D
 
 @institucion_ruta.delete('/institutions/{id}',status_code=204)
 async def delete_institucion(id: str, depends = Depends(read_users_me)):
-    db = MongoClient(MONGO_STRING)["chile3d"]
+    db = database
     if db.institucion.delete_one({"id": ObjectId(id)}):
         return {"message": "Institucion eliminada"}
     else:

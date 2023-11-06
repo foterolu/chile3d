@@ -9,6 +9,7 @@ from passlib.context import CryptContext
 from pydantic import BaseModel
 from jose import JWTError, jwt
 from globals import *
+from config.database import database
 
 
 ouath2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -44,7 +45,7 @@ async def create_access_token(data: dict, expires_delta: Union[timedelta, None] 
 
 
 async def get_current_user(token : str = Depends(ouath2_scheme)):
-    db = MongoClient(MONGO_STRING)["chile3d"]
+    db = database
     credential_exception = HTTPException(
         status_code=401,
         detail="Could not validate credentials",
@@ -74,7 +75,7 @@ async def get_current_active_admin(current_admin: Admin = Depends(get_current_us
 
 
 async def authenticate_admin(form_data: OAuth2PasswordRequestForm = Depends()):
-    db = MongoClient(MONGO_STRING)["chile3d"]
+    db = database
     admin = db["admin"].find_one({"email": form_data.username})
     if admin == None:
         raise HTTPException(status_code=400, detail="Email o Password incorrecto")
@@ -84,7 +85,7 @@ async def authenticate_admin(form_data: OAuth2PasswordRequestForm = Depends()):
     return admin
 
 async def get_current_user(token: str = Depends(ouath2_scheme)):
-    db = MongoClient(MONGO_STRING)["chile3d"]
+    db = database
     admin = db["admin"].find_one({"email" : token})
     return admin
 

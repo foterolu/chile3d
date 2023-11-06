@@ -9,11 +9,14 @@ from pymongo import MongoClient
 from schemas.schemas import Archivo
 from datetime import datetime
 from globals import *
+from config.database import database
+
+
 MUST_IN_EXTENSIONS = ['.shp' , '.shx', '.dbf']
 
 class ShapefileServices:
     def get_inside_list(self, folder,features,inside):
-        conn = MongoClient(MONGO_STRING)["chile3d"]
+        conn = database
        
         for filename in os.listdir(folder):
             admin_id = 1
