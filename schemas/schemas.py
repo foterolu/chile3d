@@ -1,7 +1,6 @@
 from pydantic import BaseModel,Field,json
-from datetime import datetime,date
+from datetime import datetime
 from bson import ObjectId
-import geojson_pydantic
 
 json.ENCODERS_BY_TYPE[ObjectId]=str
 

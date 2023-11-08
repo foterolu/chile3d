@@ -1,8 +1,6 @@
 from pymongo import MongoClient
 from dotenv import dotenv_values
 from config.initial_data import admins,institution_documents
-import json
-
 
 config = dotenv_values(".env")
 MONGO_STRING_CONECTION = config["MONGO_STRING_CONECTION"]

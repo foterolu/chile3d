@@ -1,35 +1,16 @@
-import geojson
-import subprocess as sp
-import json
-import pyproj
-import os
-import zipfile
-import io
-import pdb
-import rasterio
-import source.file_processing as fp
-from fastapi import FastAPI, Request, Response, HTTPException
-from fastapi.responses import FileResponse
-from shapely.geometry import Point
-from shapely.geometry.polygon import Polygon
+
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from PIL import Image
-from PIL.TiffTags import TAGS
-from pymongo import MongoClient
-from rasterio.enums import Resampling
-from rasterio import Affine, MemoryFile
-from rasterio.warp import reproject, Resampling
-from services.laz_services import LazServices
-from services.shp_services import ShapefileServices
-from services.tif_services import TifServices
 from routes.archivos import archivos_ruta
 from routes.institucion import institucion_ruta
 from routes.admin import admin_ruta
 from routes.login import login_ruta
-from config.database import database, mongodb_client
+from config.database import mongodb_client
 from globals import *
 from dotenv import dotenv_values
-from osgeo import gdal,osr
+import json
+import os
+import source.file_processing as fp
 
 app = FastAPI()
 origins = ["*"]

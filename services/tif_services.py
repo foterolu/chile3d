@@ -1,40 +1,16 @@
-import geojson
-import subprocess as sp
-import json
 import pyproj
-import os
-import zipfile
-import io
-import pdb
 import rasterio
-from fastapi import FastAPI, Request, Response
-from fastapi.responses import FileResponse
 from shapely.geometry import Point
-from shapely.geometry.polygon import Polygon
-from fastapi.middleware.cors import CORSMiddleware
-from PIL import Image
-from PIL.TiffTags import TAGS
-from pymongo import MongoClient
 from schemas.schemas import Archivo
-from rasterio.enums import Resampling
-from rasterio import Affine, MemoryFile
-from rasterio.warp import reproject, Resampling
-from contextlib import contextmanager
-from services.laz_services import LazServices
-from services.shp_services import ShapefileServices
 from schemas.schemas import Archivo
 from datetime import datetime
-
-from osgeo import gdal,osr
 from globals import *
 from config.database import database
 
 
 class TifServices:
     def get_inside_list(self, filename,features, inside, admin_institucion):
-   
         conn = database
-    
         nombre = filename.name
         descripcion = "descripcion"
         extension =  "tif"

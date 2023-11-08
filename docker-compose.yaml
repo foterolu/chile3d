@@ -10,3 +10,13 @@ services:
          MONGO_INITDB_ROOT_PASSWORD: example
       command: mongod --bind_ip_all
 
+   chile3d-api:
+      build:
+         context: .
+         dockerfile: Dockerfile
+      ports:
+         - '8000:8000' # Adjust the port mapping as needed
+      depends_on:
+         - mongodb-chile3d # Ensures that mongodb-chile3d is started before your_service_name
+
+

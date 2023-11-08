@@ -1,11 +1,7 @@
-import subprocess as sp
 import os
-import json
 import fiona
 import pyproj
 from shapely.geometry import Point
-from shapely.geometry.polygon import Polygon
-from pymongo import MongoClient
 from schemas.schemas import Archivo
 from datetime import datetime
 from globals import *

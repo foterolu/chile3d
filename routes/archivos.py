@@ -1,35 +1,18 @@
 import datetime
-import geojson
-import subprocess as sp
 import json
-import pyproj
 import os
 import zipfile
 import io
-import pdb
-import requests
-import rasterio
 import geojson_pydantic
-
 from typing import List,Dict
-from fastapi import FastAPI, Request, Response,Depends
-from fastapi.responses import FileResponse
-from fastapi.security import OAuth2PasswordBearer
-from shapely.geometry import Point
-from shapely.geometry.polygon import Polygon
-from fastapi.middleware.cors import CORSMiddleware
-from PIL import Image
-from PIL.TiffTags import TAGS
-from pymongo import MongoClient
+from fastapi import Request, Response,Depends
 from schemas.schemas import Archivo,ArchivosEditar,AdminInstitucion
 from services.laz_services import LazServices
-from services.shp_services import ShapefileServices
 from services.tif_services import TifServices
 from fastapi import File, UploadFile, HTTPException
 from fastapi import APIRouter
 from globals import *
 from routes.login import read_users_me
-from pathlib import Path
 from bson.objectid import ObjectId
 from bson.regex import Regex
 from config.database import database
@@ -180,18 +163,16 @@ def subir_archivo(file : List[UploadFile]  = File(...), admin = Depends(read_use
         raise HTTPException(status_code=400, detail=str(e))
     
 
-def indexar(filename,admin_institucion):
+def indexar(filename,admin_institucion: AdminInstitucion):
     conn = database
     inside = []
     if "archivos" not in conn.list_collection_names():
         conn.create_collection("archivos")
     extension =  filename.name.split('.')[-1]
     if extension == "tif":
-        return TifServices().get_inside_list(filename,[],inside,admin_institucion)
+        return TifServices().get_inside_list(filename,admin_institucion)
     elif extension == "laz":
-        #se utiliza pdal para extraer metadata de los archivos laz
-        #se extrae la proyección de los archivos laz, que es un WKT de OGC
-        return LazServices().get_inside_list(filename,[],inside,admin_institucion)
+        return LazServices().get_inside_list(filename,admin_institucion)
 
 
 
@@ -204,7 +185,7 @@ def actualizar_archivo(id: str,archivo: ArchivosEditar, depends = Depends(read_u
     response = conn["archivos"].update_one({"id": ObjectId(id)}, {"$set": notNullItems})
     if response.modified_count == 0:
         raise HTTPException(status_code=404, detail="Archivo no encontrado")
-    return {"message": "Archivo actualizado"}
+    return {"message": "File updated successfully"}
 
 @archivos_ruta.delete("/files/{id}",status_code=204)
 def eliminar_archivo(id: str, depends = Depends(read_users_me)):

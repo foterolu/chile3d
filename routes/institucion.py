@@ -1,10 +1,8 @@
-from pymongo import MongoClient
 from fastapi import APIRouter, HTTPException, Depends
 from schemas.schemas import Institucion,InstitucionEditar
-from typing import List,Dict
+from typing import List
 from datetime import datetime
 from bson.objectid import ObjectId
-from fastapi.security import OAuth2PasswordBearer
 from routes.login import read_users_me
 from bson.regex import Regex
 from globals import *

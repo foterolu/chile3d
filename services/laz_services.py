@@ -1,19 +1,9 @@
 
-
-import geojson
 import subprocess as sp
 import json
-import os
 import pyproj
-import os
-import zipfile
-import io
-import pdb
-
-from osgeo import gdal,osr
+from osgeo import osr
 from shapely.geometry import Point
-from shapely.geometry.polygon import Polygon
-from pymongo import MongoClient
 from schemas.schemas import Archivo
 from datetime import datetime
 from globals import *

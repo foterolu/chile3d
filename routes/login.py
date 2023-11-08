@@ -1,10 +1,8 @@
-from pymongo import MongoClient
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from schemas.schemas import Admin
-from typing import List,Dict,Union
+from typing import Union
 from datetime import datetime,timedelta
-from bson.objectid import ObjectId
 from passlib.context import CryptContext
 from pydantic import BaseModel
 from jose import JWTError, jwt
