@@ -5,8 +5,6 @@ services:
       container_name: chile3d-mongodb
       ports:
          - '27017:27017'
-      expose:
-         - '27017'
       environment:
          MONGO_INITDB_ROOT_USERNAME: root
          MONGO_INITDB_ROOT_PASSWORD: example
@@ -17,9 +15,8 @@ services:
          context: .
          dockerfile: Dockerfile
       ports:
-         - '8000:8000' # Adjust the port mapping as needed
+         - '8000:8000'
       depends_on:
-         - chile3d-mongodb # Ensures that mongodb-chile3d is started before your_service_name
-networks:
-   default:
+         - chile3d-mongodb
+      network_mode: host
 

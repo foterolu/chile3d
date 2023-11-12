@@ -93,4 +93,3 @@ class LazServices:
                     raise Exception("El archivo ya existe en la base de datos")
         except Exception as e:
             raise Exception("Error al extraer metadata del archivo laz")
-        return inside

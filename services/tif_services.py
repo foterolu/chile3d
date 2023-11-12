@@ -9,7 +9,7 @@ from config.database import database
 
 
 class TifServices:
-    def get_inside_list(self, filename,features, inside, admin_institucion):
+    def get_inside_list(self, filename, admin_institucion):
         conn = database
         nombre = filename.name
         descripcion = "descripcion"
