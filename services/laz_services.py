@@ -20,7 +20,7 @@ class LazServices:
         metadata = json.loads(metadata)
         return metadata
 
-    def get_inside_list(self,filename,features,inside,admin_institucion):
+    def get_inside_list(self,filename,admin_institucion):
         conn = database
         admin_id = 1
         nombre = filename.name
@@ -38,10 +38,13 @@ class LazServices:
         topic_category = "topic_category"
         institucion = "institucion"
         cantidad_descargas = 0
+       
         try:
             metadata = self.get_metadata(filename)
             spatial = metadata['metadata']['comp_spatialreference']
+            
             if spatial != '':
+            
                 srs = osr.SpatialReference(wkt=spatial)
                 espg_code = srs.GetAttrValue('AUTHORITY',1)
 
@@ -59,12 +62,15 @@ class LazServices:
                 maxy = p1[1]
                 minx = p2[0]
                 miny = p2[1]
+            
                 coordinates =  [[[minx, miny], [minx, maxy], [maxx, maxy], [maxx, miny], [minx, miny]]]
                 geometry = {
                     "type": "Polygon",
                     "coordinates": coordinates
                 }
+              
                 admin_institucion = admin_institucion.dict()
+                
                 if conn["archivos"].find_one({"url": DIRECTORY + "laz/" + filename.name}) == None:
                     data = {
                     "admin":admin_institucion ,
@@ -91,5 +97,7 @@ class LazServices:
                     return conn["archivos"].insert_one(insert_archivo.dict())
                 else:
                     raise Exception("El archivo ya existe en la base de datos")
+            else:
+                raise Exception("referencia espacial no encontrada")
         except Exception as e:
-            raise Exception("Error al extraer metadata del archivo laz")
+            raise Exception("Error al extraer metadata del archivo laz, " + str(e))

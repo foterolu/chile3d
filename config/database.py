@@ -16,7 +16,6 @@ if USERNAME and PASSWORD:
     
 else:
     mongodb_client = MongoClient(MONGO_STRING_CONECTION)
-# print(mongodb_client, DB_NAME)
 if DB_NAME not in mongodb_client.list_database_names():
     database = mongodb_client[config["DB_NAME"]]
 database = mongodb_client[DB_NAME]

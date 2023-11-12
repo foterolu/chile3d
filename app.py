@@ -61,6 +61,5 @@ async def file_process(request: Request):
         file_name = fp.resample_file(data, scale)
         return {"resample_file" : str(file_name)}
     except Exception as e:
-        print(e)
         return {"exception": "failed", "status" : e}
 

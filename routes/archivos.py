@@ -55,7 +55,6 @@ async def get_archivos(
             fecha_fin   = datetime.datetime.strptime(fecha_fin, "%Y-%m-%d")
         except Exception as e:
             raise HTTPException(status_code=400, detail="Formato de fecha incorrecto")
-        print(fecha_incio,fecha_fin)
         query["fecha_creacion"] = {"$gte": fecha_incio, "$lte": fecha_fin}
     if url:
         query["url"] = url
@@ -129,12 +128,10 @@ async def buscar_archivos(request: geojson_pydantic.FeatureCollection[geojson_py
 def subir_archivo(file : List[UploadFile]  = File(...), admin = Depends(read_users_me)):
     os.makedirs(WORKING_DIRECTORY, exist_ok=True)
     admin["admin_id"] = admin["id"]
-    print(admin)
     admin_institucion = AdminInstitucion(**admin)
     names =[]
     for file in file:
         names.append(file.filename) 
-        print(file.filename)
         if file.filename.lower().endswith(EXTENSIONS):
             try:
                 contents = file.file.read()
@@ -220,7 +217,6 @@ def zipfiles(filenames):
             zf.write(fpath, fname)
         else:
             for dirname, subdirs, files in os.walk(fpath):
-                print(subdirs)
                 for filename in files:
                     
                     # Add file, at correct path
