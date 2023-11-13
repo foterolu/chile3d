@@ -67,7 +67,8 @@ async def get_archivos(
     if cantidad_descargas:
         query["cantidad_descargas"] = cantidad_descargas
 
-    archivos = conn["archivos"].find(query).skip(skip).limit(fetch)
+    projection = {"_id": 0}
+    archivos = conn["archivos"].find(query,projection).skip(skip).limit(fetch)
 
     return list(archivos)
 
