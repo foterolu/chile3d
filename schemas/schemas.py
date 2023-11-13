@@ -32,6 +32,24 @@ class Admin(BaseModel):
     password : str
     created_at = datetime.utcnow()
 
+class AdminGet(BaseModel):
+    id : PyObjectId = Field(default_factory=PyObjectId, alias="id")
+    institucion_id : str
+    nombre : str
+    email : str
+    rut : str
+    celular : str
+    institucion : str
+    area_trabajo : str
+class AdminEditar(BaseModel):
+    nombre : str
+    email : str
+    rut : str
+    celular : str
+    institucion_id : str
+    area_trabajo : str
+
+
 class AdminInstitucion(BaseModel):
     admin_id : PyObjectId = Field(default_factory=PyObjectId, alias="id")
     institucion_id : str

@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from config.database import database
 from globals import *
 from routes.login import read_users_me
-from schemas.schemas import Admin
+from schemas.schemas import Admin,AdminGet,AdminEditar
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 admin_ruta = APIRouter(dependencies=[Depends(read_users_me)])
@@ -32,25 +32,48 @@ class TokenData(BaseModel):
 
 
 
-@admin_ruta.get('/admin', response_model=List[Admin],status_code=200)
-async def get_admin():
+@admin_ruta.get('/admin', response_model=List[AdminGet],status_code=200)
+async def get_admin(
+    fetch: int = 0,
+    skip: int = 0,
+    institucion_id: str = None,
+    nombre: str = None,
+    email: str = None,
+    rut: str = None,
+    celular: str = None,
+    institucion: str = None,
+    area_trabajo: str = None,
+):
     db = database
-    admins = list(db["admin"].find({}))
-
+    query = {}
+   
+    if institucion_id:
+        query["institucion_id"] = institucion_id
+    if nombre:
+        query["nombre"] = {"$regex": f".*{nombre}.*", "$options": "i"}
+    if email:
+        query["email"] = {"$regex": f".*{email}.*", "$options": "i"}
+    if rut:
+        query["rut"] = {"$regex": f".*{rut}.*", "$options": "i"}
+    if celular:
+        query["celular"] = {"$regex": f".*{celular}.*", "$options": "i"}
+    if institucion:
+        query["institucion"] = {"$regex": f".*{institucion}.*", "$options": "i"}
+    if area_trabajo:
+        query["area_trabajo"] = {"$regex": f".*{area_trabajo}.*", "$options": "i"}
+    
+    projection = {"password": 0,"is_superadmin": 0,"created_at": 0}
+    admins = list(db["admin"].find(query,projection).skip(skip).limit(fetch))
     return admins
 
-@admin_ruta.get('/admin/{id}', response_model=Admin,status_code=200)
+@admin_ruta.get('/admin/{id}',status_code=200)
 async def get_admin(id: str):
-    try:
-        db = database
-        admin = db["admin"].find_one({"id": ObjectId(id)})
-        if admin:
+    db = database
+    admin = db["admin"].find_one({"id": ObjectId(id)})
+    if admin:
+        return list(admin)
+    return HTTPException(status_code=404, detail="Admin no encontrado")
 
-            return admin
-        else:
-            raise HTTPException(status_code=404, detail="Admin no encontrado")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 
 
@@ -68,9 +91,26 @@ async def crear_admin(admin: Admin):
         raise HTTPException(status_code=400, detail="Email ya existe")
     
 
-@admin_ruta.put('/admin/{id}',status_code=204)
-async def update_admin(id: str, admin: Admin):
+@admin_ruta.put('/admin/{id}',response_model=AdminGet)
+async def update_admin(id: str, admin: AdminEditar):
+    if not ObjectId.is_valid(id):
+        raise HTTPException(status_code=400, detail="Id no válido")
+
     db = database
     admin = admin.dict()
-    admin['updated_at'] = datetime.utcnow()
-    db["admin"].update
+    admin["updated_at"] = datetime.utcnow()
+    admin["institucion"] = db["institucion"].find_one({"id": ObjectId(admin["institucion_id"])})["nombre"]
+    update = db["admin"].update_one({"id": ObjectId(id)}, {"$set": admin})
+    updated_obj = db["admin"].find_one({"id": ObjectId(id)})
+    if update.modified_count > 0:
+        return updated_obj
+    return HTTPException(status_code=404, detail="Admin no encontrado")
+
+@admin_ruta.delete('/admin/{id}',status_code=204)
+async def delete_admin(id: str):
+    db = database
+    deleted_admin = db["admin"].delete_one({"id": ObjectId(id)})
+    if deleted_admin.deleted_count > 0:
+        return {"message": "Admin eliminado"}
+    else:
+        raise HTTPException(status_code=404, detail="Admin no encontrado")
