@@ -17,11 +17,11 @@ class PolygonSearch(BaseModel):
     keyword: str = None
     topic_category: str = None
 
-    @validator('fecha_inicio', 'fecha_fin', pre=True, each_item=True)
+    @validator('fecha_inicio', 'fecha_fin', each_item=True)
     def dates_must_be_valid(cls, value):
         if value:
             try:
-                return datetime.datetime.strptime(value, "%Y-%m-%d")
+                datetime.datetime.strptime(value, "%Y-%m-%d")
             except ValueError:
                 raise ValueError("fecha_inicio y fecha_fin deben ser del formato YYYY-MM-DD")
         return value

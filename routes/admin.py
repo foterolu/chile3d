@@ -10,7 +10,7 @@ from routes.login import read_users_me
 from schemas.schemas import Admin,AdminGet,AdminEditar
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-admin_ruta = APIRouter(dependencies=[Depends(read_users_me)])
+admin_ruta = APIRouter()
 
 
 
@@ -43,10 +43,12 @@ async def get_admin(
     celular: str = None,
     institucion: str = None,
     area_trabajo: str = None,
+    superadmin = Depends(read_users_me)
 ):
     db = database
     query = {}
-   
+    if db["admin"].find_one({"email": superadmin["email"]})["is_superadmin"] == False:
+        raise HTTPException(status_code=401, detail="No autorizado")
     if institucion_id:
         query["institucion_id"] = institucion_id
     if nombre:
@@ -67,8 +69,13 @@ async def get_admin(
     return admins
 
 @admin_ruta.get('/admin/{id}',status_code=200)
-async def get_admin(id: str):
+async def get_admin(id: str,superadmin = Depends(read_users_me)):
     db = database
+    if db["admin"].find_one({"email": superadmin["email"]})["is_superadmin"] == False:
+        raise HTTPException(status_code=401, detail="No autorizado")
+    if not ObjectId.is_valid(id):
+        raise HTTPException(status_code=400, detail="Id no válido")
+
     admin = db["admin"].find_one({"id": ObjectId(id)})
     if admin:
         return list(admin)
@@ -79,8 +86,10 @@ async def get_admin(id: str):
 
 
 @admin_ruta.post('/admin', response_model=Admin,status_code=201)
-async def crear_admin(admin: Admin):
+async def crear_admin(admin: Admin,superadmin = Depends(read_users_me)):
     db = database
+    if db["admin"].find_one({"email": superadmin["email"]})["is_superadmin"] == False:
+        raise HTTPException(status_code=401, detail="No autorizado")
     admin = admin.dict()
     if db["admin"].find_one({"email": admin["email"]}) == None:
         admin["password"] = Hasher.get_password_hash(admin["password"])
@@ -92,11 +101,13 @@ async def crear_admin(admin: Admin):
     
 
 @admin_ruta.put('/admin/{id}',response_model=AdminGet)
-async def update_admin(id: str, admin: AdminEditar):
+async def update_admin(id: str, admin: AdminEditar,superadmin = Depends(read_users_me)):
+    db = database
     if not ObjectId.is_valid(id):
         raise HTTPException(status_code=400, detail="Id no válido")
+    if db["admin"].find_one({"email": superadmin["email"]})["is_superadmin"] == False:
+        raise HTTPException(status_code=401, detail="No autorizado")
 
-    db = database
     admin = admin.dict()
     admin["updated_at"] = datetime.utcnow()
     admin["institucion"] = db["institucion"].find_one({"id": ObjectId(admin["institucion_id"])})["nombre"]
@@ -107,8 +118,12 @@ async def update_admin(id: str, admin: AdminEditar):
     return HTTPException(status_code=404, detail="Admin no encontrado")
 
 @admin_ruta.delete('/admin/{id}',status_code=204)
-async def delete_admin(id: str):
+async def delete_admin(id: str, superadmin = Depends(read_users_me)):
     db = database
+    if db["admin"].find_one({"email": superadmin["email"]})["is_superadmin"] == False:
+        raise HTTPException(status_code=401, detail="No autorizado")
+    if not ObjectId.is_valid(id):
+        raise HTTPException(status_code=400, detail="Id no válido")
     deleted_admin = db["admin"].delete_one({"id": ObjectId(id)})
     if deleted_admin.deleted_count > 0:
         return {"message": "Admin eliminado"}
