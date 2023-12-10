@@ -24,7 +24,7 @@ class TifServices:
         url = "url"
         keyword = "keyword"
         topic_category = "topic_category"
-        institucion = "institucion"
+        institucion =  admin_institucion.dict()["institucion"]
         cantidad_descargas = 0
 
         archivo = rasterio.open(filename.path)

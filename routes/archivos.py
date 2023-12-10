@@ -7,6 +7,7 @@ import geojson_pydantic
 from typing import List,Dict
 from fastapi import Request, Response,Depends
 from schemas.schemas import Archivo,ArchivosEditar,AdminInstitucion
+from schemas.polygon_search import PolygonSearch
 from services.laz_services import LazServices
 from services.tif_services import TifServices
 from fastapi import File, UploadFile, HTTPException
@@ -30,7 +31,7 @@ async def get_archivos(
     descripcion: str = None,
     extension: str = None,
     espg: str = None,
-    fecha_incio: str = None,
+    fecha_inicio: str = None,
     fecha_fin: str = None,
     url: str = None,
     keyword: str = None,
@@ -49,13 +50,15 @@ async def get_archivos(
         query["extension"] = extension
     if espg:
         query["espg"] = espg
-    if fecha_incio and fecha_fin:
+    if fecha_inicio and fecha_fin:
         try:
-            fecha_incio = datetime.datetime.strptime(fecha_incio, "%Y-%m-%d")
+            fecha_inicio = datetime.datetime.strptime(fecha_inicio, "%Y-%m-%d")
             fecha_fin   = datetime.datetime.strptime(fecha_fin, "%Y-%m-%d")
+            if fecha_inicio > fecha_fin:
+                raise Exception("Fecha inicio debe ser menor a fecha fin")
         except Exception as e:
-            raise HTTPException(status_code=400, detail="Formato de fecha incorrecto")
-        query["fecha_creacion"] = {"$gte": fecha_incio, "$lte": fecha_fin}
+            raise HTTPException(status_code=400, detail=str(e))
+        query["fecha_creacion"] = {"$gte": fecha_inicio, "$lte": fecha_fin}
     if url:
         query["url"] = url
     if keyword:
@@ -68,6 +71,7 @@ async def get_archivos(
         query["cantidad_descargas"] = cantidad_descargas
 
     projection = {"_id": 0}
+
     archivos = conn["archivos"].find(query,projection).skip(skip).limit(fetch)
 
     return list(archivos)
@@ -98,7 +102,7 @@ async def file_response(request: Request):
     
 
 @archivos_ruta.post("/files/polygon",status_code=200,response_model=List[Archivo])
-async def buscar_archivos(request: geojson_pydantic.FeatureCollection[geojson_pydantic.Polygon,Dict]):
+async def buscar_archivos(request: geojson_pydantic.FeatureCollection[geojson_pydantic.Polygon,Dict], params: PolygonSearch = Depends()):
     conn = database
     body = request
     MyPolygon = geojson_pydantic.FeatureCollection(features=body.features)
@@ -116,11 +120,40 @@ async def buscar_archivos(request: geojson_pydantic.FeatureCollection[geojson_py
                        
                     }
                 }
-            }
+            },
         }
-        retrieved_documents = list(conn["archivos"].find(query))
+        if params.institucion:
+            query["institucion"] = params.institucion
+        if params.nombre:
+            query["nombre"] = {"$regex": Regex(params.nombre, "i")}
+        if params.descripcion:
+            query["descripcion"] = params.descripcion
+        if params.extension:
+            query["extension"] = params.extension
+        if params.espg:
+            query["espg"] = params.espg
+        if params.fecha_inicio and params.fecha_fin:
+            try:
+                fecha_inicio = datetime.datetime.strptime(params.fecha_inicio, "%Y-%m-%d")
+                fecha_fin   = datetime.datetime.strptime(params.fecha_fin, "%Y-%m-%d")
+                if fecha_inicio > fecha_fin:
+                    raise Exception("Fecha inicio debe ser menor a fecha fin")
+            except Exception as e:
+                raise HTTPException(status_code=400, detail=str(e))
+            query["fecha_creacion"] = {"$gte": fecha_inicio, "$lte": fecha_fin}
+        if params.url:
+            query["url"] = params.url
+        if params.keyword:
+            query["keyword"] = params.keyword
+        if params.topic_category:
+            query["topic_category"] = params.topic_category
+        
+
+        retrieved_documents = list(conn["archivos"].find(query).limit(params.fetch).skip(params.skip))
         if len(retrieved_documents) > 0:    
             inside.extend(retrieved_documents)
+
+
     return inside
 
       

@@ -25,7 +25,7 @@ class LazServices:
         admin_id = 1
         nombre = filename.name
         descripcion = "descripcion"
-        extension =  "shp"
+        extension =  "laz"
         espg_code = ""
         fecha_creacion = datetime.utcnow()
         fecha_modificacion = datetime.utcnow()
@@ -71,7 +71,7 @@ class LazServices:
               
                 admin_institucion = admin_institucion.dict()
                 
-                if conn["archivos"].find_one({"url": DIRECTORY + "laz/" + filename.name}) == None:
+                if conn["archivos"].find_one({"url": WORKING_DIRECTORY + filename.name}) == None:
                     data = {
                     "admin":admin_institucion ,
                     "nombre": nombre,
@@ -100,4 +100,4 @@ class LazServices:
             else:
                 raise Exception("referencia espacial no encontrada")
         except Exception as e:
-            raise Exception("Error al extraer metadata del archivo laz, " + str(e))
+            raise Exception( str(e))

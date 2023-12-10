@@ -9,7 +9,7 @@ admins = [
         "rut": "19611109-3",
         "celular": "+569 12345678",
         "area_trabajo": "Ciencias de la ingeniería",
-        "is_superadmin": False,
+        "is_superadmin": True,
         "password": "$2b$12$qheAs2ecC62q2j8DDJS1QOBjomOVEhiopKsSKBz0gIFl3.IwY/FNm",
         "created_at": {"$date": "2022-12-07T20:47:27.898Z"},
         "institucion": "Universidad Técnica Federico Santa María",
